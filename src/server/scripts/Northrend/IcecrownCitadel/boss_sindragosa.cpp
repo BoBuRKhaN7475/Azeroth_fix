@@ -292,6 +292,8 @@ public:
             _bombCount = 0;
             _mysticBuffetStack = 0;
             _Reset();
+            me->DisableRotate(false);
+            me->SetControlled(false, UNIT_STATE_ROOT);
             if (me->GetPositionZ() > 215.0f)
             {
                 me->SetCanFly(true);
@@ -374,6 +376,8 @@ public:
 
         void EnterEvadeMode(EvadeReason why) override
         {
+            me->DisableRotate(false);
+            me->SetControlled(false, UNIT_STATE_ROOT);
             instance->SetBossState(DATA_SINDRAGOSA, FAIL);
             BossAI::EnterEvadeMode(why);
         }
@@ -383,6 +387,8 @@ public:
             BossAI::JustReachedHome();
             _isInAirPhase = false;
             _isLanding = false;
+            me->DisableRotate(false);
+            me->SetControlled(false, UNIT_STATE_ROOT);
             if (me->GetPositionZ() > 215.0f)
             {
                 me->SetCanFly(true);
@@ -458,6 +464,8 @@ public:
                     me->SetCanFly(false);
                     me->SetDisableGravity(false);
                     me->SetAnimTier(AnimTier::Ground);
+                    me->DisableRotate(false);
+                    me->SetControlled(false, UNIT_STATE_ROOT);
                     me->SetFacingTo(SindragosaLandPos.GetOrientation());
                     me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
                     me->SetHomePosition(SindragosaLandPos);
@@ -490,6 +498,8 @@ public:
                         me->SetCanFly(false);
                         me->SetDisableGravity(false);
                         me->SetAnimTier(AnimTier::Ground);
+                        me->DisableRotate(false);
+                        me->SetControlled(false, UNIT_STATE_ROOT);
                         me->SetFacingTo(SindragosaLandPos.GetOrientation());
                         me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
                         me->SetReactState(REACT_AGGRESSIVE);
@@ -568,25 +578,19 @@ public:
                     me->CastSpell(me, SPELL_BERSERK, true);
                     break;
                 case EVENT_CLEAVE:
+                    if (Unit* victim = me->GetVictim())
+                        me->SetFacingToObject(victim);
                     me->CastSpell(me->GetVictim(), SPELL_CLEAVE, false);
                     events.ScheduleEvent(EVENT_CLEAVE, 10s, 15s, EVENT_GROUP_LAND_PHASE);
                     break;
                 case EVENT_TAIL_SMASH:
-                    me->DisableRotate(true);
-                    me->SetControlled(true, UNIT_STATE_ROOT);
-                    me->SendMovementFlagUpdate();
-                    me->CastSpell(me->GetVictim(), SPELL_TAIL_SMASH, false);
-                    events.DelayEventsToMax(1ms, 0);
-                    events.ScheduleEvent(EVENT_UNROOT, 0ms);
+                    me->CastSpell(me, SPELL_TAIL_SMASH, false);
                     events.ScheduleEvent(EVENT_TAIL_SMASH, 22s, 27s, EVENT_GROUP_LAND_PHASE);
                     break;
                 case EVENT_FROST_BREATH:
-                    me->DisableRotate(true);
-                    me->SetControlled(true, UNIT_STATE_ROOT);
-                    me->SendMovementFlagUpdate();
+                    if (Unit* victim = me->GetVictim())
+                        me->SetFacingToObject(victim);
                     me->CastSpell(me->GetVictim(), _isThirdPhase ? SPELL_FROST_BREATH_P2 : SPELL_FROST_BREATH_P1, false);
-                    events.DelayEventsToMax(1ms, 0);
-                    events.ScheduleEvent(EVENT_UNROOT, 0ms);
                     events.ScheduleEvent(EVENT_FROST_BREATH, 20s, 25s, EVENT_GROUP_LAND_PHASE);
                     break;
                 case EVENT_UNROOT:
@@ -1350,11 +1354,13 @@ public:
                     _events.ScheduleEvent(EVENT_BELLOWING_ROAR, 25s, 30s);
                     break;
                 case EVENT_CLEAVE_SPINESTALKER:
+                    if (Unit* victim = me->GetVictim())
+                        me->SetFacingToObject(victim);
                     me->CastSpell(me->GetVictim(), SPELL_CLEAVE_SPINESTALKER, false);
                     _events.ScheduleEvent(EVENT_CLEAVE_SPINESTALKER, 10s, 15s);
                     break;
                 case EVENT_TAIL_SWEEP:
-                    me->CastSpell(me->GetVictim(), SPELL_TAIL_SWEEP, false);
+                    me->CastSpell(me, SPELL_TAIL_SWEEP, false);
                     _events.ScheduleEvent(EVENT_TAIL_SWEEP, 22s, 25s);
                     break;
                 default:
@@ -1508,6 +1514,8 @@ public:
                 case EVENT_FROST_BREATH_RIMEFANG:
                     if (!me->IsFlying())
                     {
+                        if (Unit* victim = me->GetVictim())
+                            me->SetFacingToObject(victim);
                         me->CastSpell(me->GetVictim(), SPELL_FROST_BREATH, false);
                         _events.ScheduleEvent(EVENT_FROST_BREATH_RIMEFANG, 20s, 25s);
                     }
