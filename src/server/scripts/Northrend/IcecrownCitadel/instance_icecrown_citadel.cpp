@@ -1338,6 +1338,10 @@ public:
                     if (ColdflameJetsState == DONE)
                         SaveToDB();
                     break;
+                case DATA_SINDRAGOSA_INTRO:
+                    IsSindragosaIntroDone = (data != 0);
+                    SaveToDB();
+                    break;
                 case DATA_BLOOD_QUICKENING_STATE:
                     {
                         if (data == IN_PROGRESS && BloodQuickeningState != NOT_STARTED)

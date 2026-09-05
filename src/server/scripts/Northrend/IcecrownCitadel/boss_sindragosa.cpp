@@ -172,6 +172,7 @@ Position const SindragosaFlyInPos  = {4420.190f, 2484.360f, 232.5150f, 3.141593f
 Position const SindragosaLandPos   = {4419.190f, 2484.570f, 203.3848f, 3.141593f};
 Position const SindragosaAirPos    = {4475.990f, 2484.430f, 247.9340f, 3.141593f};
 Position const SindragosaAirPosFar = {4525.600f, 2485.150f, 245.0820f, 3.141593f};
+Position const SindragosaFlyPos    = {4475.190f, 2484.570f, 234.8510f, 3.141593f};
 
 class FrostwyrmLandEvent : public BasicEvent
 {
@@ -286,12 +287,18 @@ public:
         {
             _isBelow20Pct = false;
             _isThirdPhase = false;
+            _isInAirPhase = false;
             _isLanding = false;
             _bombCount = 0;
             _mysticBuffetStack = 0;
             _Reset();
+            me->SetCanFly(false);
+            me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
+            me->SetFacingTo(SindragosaLandPos.GetOrientation());
             me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
             me->SetReactState(REACT_AGGRESSIVE);
+            me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
             me->CastSpell(me, SPELL_TANK_MARKER, true);
         }
 
@@ -361,6 +368,19 @@ public:
             BossAI::EnterEvadeMode(why);
         }
 
+        void JustReachedHome() override
+        {
+            BossAI::JustReachedHome();
+            _isInAirPhase = false;
+            _isLanding = false;
+            me->SetCanFly(false);
+            me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
+            me->SetFacingTo(SindragosaLandPos.GetOrientation());
+            me->SetReactState(REACT_AGGRESSIVE);
+            me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+        }
+
         void KilledUnit(Unit* victim) override
         {
             if (victim->IsPlayer())
@@ -369,8 +389,11 @@ public:
 
         void DoAction(int32 action) override
         {
-            if (action == ACTION_START_FROSTWYRM && !_isLanding)
+            if (action == ACTION_START_FROSTWYRM)
             {
+                if (_isLanding || instance->GetData(DATA_SINDRAGOSA_INTRO))
+                    return;
+
                 _isLanding = true;
 
                 if (TempSummon* summon = me->ToTempSummon())
@@ -380,12 +403,14 @@ public:
                     return;
 
                 me->setActive(true);
+                me->SetCanFly(true);
                 me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
                 me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                 me->SetSpeed(MOVE_RUN, 4.28571f);
-                float moveTime = me->GetExactDist(&SindragosaFlyInPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
+                float moveTime = me->GetExactDist(&SindragosaFlyPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
                 me->m_Events.AddEventAtOffset(new FrostwyrmLandEvent(*me, SindragosaLandPos), Milliseconds(uint32(moveTime) + 250));
-                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyInPos);
+                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
 
                 if (!instance->GetData(DATA_SINDRAGOSA_INTRO))
                 {
@@ -410,10 +435,15 @@ public:
             {
                 case POINT_FROSTWYRM_LAND:
                     me->setActive(false);
+                    me->SetCanFly(false);
                     me->SetDisableGravity(false);
+                    me->SetAnimTier(AnimTier::Ground);
+                    me->SetFacingTo(SindragosaLandPos.GetOrientation());
                     me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
                     me->SetHomePosition(SindragosaLandPos);
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                    _isLanding = false;
+                    instance->SetData(DATA_SINDRAGOSA_INTRO, 1);
 
                     // Sindragosa enters combat as soon as she lands
                     me->SetInCombatWithZone();
@@ -437,7 +467,10 @@ public:
                 case POINT_LAND_GROUND:
                     {
                         _isInAirPhase = false;
+                        me->SetCanFly(false);
                         me->SetDisableGravity(false);
+                        me->SetAnimTier(AnimTier::Ground);
+                        me->SetFacingTo(SindragosaLandPos.GetOrientation());
                         me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
                         me->SetReactState(REACT_AGGRESSIVE);
                         if (Unit* target = me->SelectVictim())
@@ -581,16 +614,18 @@ public:
                     me->AttackStop();
                     me->GetMotionMaster()->MoveIdle();
                     me->StopMoving();
+                    me->SetCanFly(true);
                     me->SetDisableGravity(true);
+                    me->SetAnimTier(AnimTier::Fly);
                     me->GetMotionMaster()->MoveTakeoff(POINT_TAKEOFF, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 20.0f, 10.0f);
                     events.CancelEventGroup(EVENT_GROUP_LAND_PHASE);
                     events.ScheduleEvent(EVENT_AIR_PHASE, 110s);
                     break;
                 case EVENT_AIR_MOVEMENT:
-                    me->GetMotionMaster()->MovePoint(POINT_AIR_PHASE, SindragosaAirPos);
+                    me->GetMotionMaster()->MovePoint(POINT_AIR_PHASE, SindragosaAirPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
                     break;
                 case EVENT_AIR_MOVEMENT_FAR:
-                    me->GetMotionMaster()->MovePoint(POINT_AIR_PHASE_FAR, SindragosaAirPosFar);
+                    me->GetMotionMaster()->MovePoint(POINT_AIR_PHASE_FAR, SindragosaAirPosFar, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
                     break;
                 case EVENT_FROST_BOMB:
                     {
@@ -624,7 +659,7 @@ public:
                         break;
                     }
                 case EVENT_LAND:
-                    me->GetMotionMaster()->MovePoint(POINT_LAND, SindragosaFlyInPos);
+                    me->GetMotionMaster()->MovePoint(POINT_LAND, SindragosaFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
                     break;
                 case EVENT_LAND_GROUND:
                     events.ScheduleEvent(EVENT_CLEAVE, 13s, 15s, EVENT_GROUP_LAND_PHASE);
@@ -1217,11 +1252,13 @@ public:
             ScriptedAI::JustReachedHome();
             if (_summoned)
             {
+                me->SetCanFly(false);
                 me->SetDisableGravity(false);
                 me->SetAnimTier(AnimTier::Ground);
             }
             else
             {
+                me->SetCanFly(true);
                 me->SetDisableGravity(true);
                 me->SetAnimTier(AnimTier::Fly);
             }
@@ -1268,6 +1305,7 @@ public:
                 return;
 
             me->setActive(false);
+            me->SetCanFly(false);
             me->SetDisableGravity(false);
             me->SetAnimTier(AnimTier::Ground);
             me->SetHomePosition(SpinestalkerLandPos);
@@ -1358,11 +1396,13 @@ public:
             ScriptedAI::JustReachedHome();
             if (_summoned)
             {
+                me->SetCanFly(false);
                 me->SetDisableGravity(false);
                 me->SetAnimTier(AnimTier::Ground);
             }
             else
             {
+                me->SetCanFly(true);
                 me->SetDisableGravity(true);
                 me->SetAnimTier(AnimTier::Fly);
             }
@@ -1411,6 +1451,7 @@ public:
             if (point == POINT_FROSTWYRM_LAND)
             {
                 me->setActive(false);
+                me->SetCanFly(false);
                 me->SetDisableGravity(false);
                 me->SetAnimTier(AnimTier::Ground);
                 me->SetHomePosition(RimefangLandPos);
@@ -1554,7 +1595,7 @@ public:
                 if (Creature* rimefang = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_RIMEFANG)))
                     rimefang->AI()->DoAction(ACTION_START_FROSTWYRM);
 
-            if (!instance->GetData(DATA_SINDRAGOSA_FROSTWYRMS) && instance->GetBossState(DATA_SINDRAGOSA) != IN_PROGRESS)
+            if (!instance->GetData(DATA_SINDRAGOSA_FROSTWYRMS) && instance->GetBossState(DATA_SINDRAGOSA) != IN_PROGRESS && !instance->GetData(DATA_SINDRAGOSA_INTRO))
             {
                 if (Creature* sindragosa = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_SINDRAGOSA)))
                     sindragosa->AI()->DoAction(ACTION_START_FROSTWYRM);
