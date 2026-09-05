@@ -292,13 +292,23 @@ public:
             _bombCount = 0;
             _mysticBuffetStack = 0;
             _Reset();
-            me->SetCanFly(false);
-            me->SetDisableGravity(false);
-            me->SetAnimTier(AnimTier::Ground);
-            me->SetFacingTo(SindragosaLandPos.GetOrientation());
+            if (me->GetPositionZ() > 215.0f)
+            {
+                me->SetCanFly(true);
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
+                me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            }
+            else
+            {
+                me->SetCanFly(false);
+                me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
+                me->SetFacingTo(SindragosaLandPos.GetOrientation());
+                me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            }
             me->SetSpeed(MOVE_RUN, me->GetCreatureTemplate()->speed_run);
             me->SetReactState(REACT_AGGRESSIVE);
-            me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
             me->CastSpell(me, SPELL_TANK_MARKER, true);
         }
 
@@ -373,12 +383,22 @@ public:
             BossAI::JustReachedHome();
             _isInAirPhase = false;
             _isLanding = false;
-            me->SetCanFly(false);
-            me->SetDisableGravity(false);
-            me->SetAnimTier(AnimTier::Ground);
-            me->SetFacingTo(SindragosaLandPos.GetOrientation());
+            if (me->GetPositionZ() > 215.0f)
+            {
+                me->SetCanFly(true);
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
+                me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            }
+            else
+            {
+                me->SetCanFly(false);
+                me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
+                me->SetFacingTo(SindragosaLandPos.GetOrientation());
+                me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            }
             me->SetReactState(REACT_AGGRESSIVE);
-            me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
         }
 
         void KilledUnit(Unit* victim) override
@@ -391,7 +411,7 @@ public:
         {
             if (action == ACTION_START_FROSTWYRM)
             {
-                if (_isLanding || instance->GetData(DATA_SINDRAGOSA_INTRO))
+                if (_isLanding || me->GetPositionZ() < 215.0f)
                     return;
 
                 _isLanding = true;
@@ -408,9 +428,9 @@ public:
                 me->SetAnimTier(AnimTier::Fly);
                 me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                 me->SetSpeed(MOVE_RUN, 4.28571f);
-                float moveTime = me->GetExactDist(&SindragosaFlyPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
+                float moveTime = me->GetExactDist(&SindragosaFlyInPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
                 me->m_Events.AddEventAtOffset(new FrostwyrmLandEvent(*me, SindragosaLandPos), Milliseconds(uint32(moveTime) + 250));
-                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
+                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyInPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
 
                 if (!instance->GetData(DATA_SINDRAGOSA_INTRO))
                 {
@@ -1595,7 +1615,7 @@ public:
                 if (Creature* rimefang = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_RIMEFANG)))
                     rimefang->AI()->DoAction(ACTION_START_FROSTWYRM);
 
-            if (!instance->GetData(DATA_SINDRAGOSA_FROSTWYRMS) && instance->GetBossState(DATA_SINDRAGOSA) != IN_PROGRESS && !instance->GetData(DATA_SINDRAGOSA_INTRO))
+            if (!instance->GetData(DATA_SINDRAGOSA_FROSTWYRMS) && instance->GetBossState(DATA_SINDRAGOSA) != IN_PROGRESS)
             {
                 if (Creature* sindragosa = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_SINDRAGOSA)))
                     sindragosa->AI()->DoAction(ACTION_START_FROSTWYRM);

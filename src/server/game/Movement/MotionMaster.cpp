@@ -570,8 +570,6 @@ void MotionMaster::MoveLand(uint32 id, Position const& pos, float speed /* = 0.0
     }
 
     init.SetAnimation(AnimTier::Ground);
-    if (pos.GetOrientation() != 0.0f)
-        init.SetFacing(pos.GetOrientation());
 
     Mutate(new EffectMovementGenerator(init, id), MOTION_SLOT_ACTIVE);
 }

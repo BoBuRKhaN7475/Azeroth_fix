@@ -1743,7 +1743,9 @@ public:
                             if (Creature* sindragosa = instance->SummonCreature(NPC_SINDRAGOSA, SindragosaSpawnPos))
                             {
                                 sindragosa->setActive(true);
+                                sindragosa->SetCanFly(true);
                                 sindragosa->SetDisableGravity(true);
+                                sindragosa->SetAnimTier(AnimTier::Fly);
                                 sindragosa->GetMotionMaster()->MoveWaypoint(NPC_SINDRAGOSA * 10, true);
 
                                 if (TempSummon* summon = sindragosa->ToTempSummon())
