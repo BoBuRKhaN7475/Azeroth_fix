@@ -1208,6 +1208,7 @@ public:
             if (!_summoned)
             {
                 me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
             }
         }
 
@@ -1217,6 +1218,12 @@ public:
             if (_summoned)
             {
                 me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
+            }
+            else
+            {
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
             }
         }
 
@@ -1244,12 +1251,14 @@ public:
 
                 me->setActive(true);
                 me->SetImmuneToPC(true);
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
                 float moveTime = me->GetExactDist(&SpinestalkerFlyPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
                 me->m_Events.AddEventAtOffset(new FrostwyrmLandEvent(*me, SpinestalkerLandPos), Milliseconds(uint32(moveTime) + 250));
                 me->SetDefaultMovementType(IDLE_MOTION_TYPE);
                 me->GetMotionMaster()->MoveIdle();
                 me->StopMoving();
-                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SpinestalkerFlyPos);
+                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SpinestalkerFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
             }
         }
 
@@ -1260,6 +1269,7 @@ public:
 
             me->setActive(false);
             me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
             me->SetHomePosition(SpinestalkerLandPos);
             me->SetFacingTo(SpinestalkerLandPos.GetOrientation());
             me->SetImmuneToPC(false);
@@ -1339,6 +1349,7 @@ public:
             if (!_summoned)
             {
                 me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
             }
         }
 
@@ -1348,6 +1359,12 @@ public:
             if (_summoned)
             {
                 me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
+            }
+            else
+            {
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
             }
         }
 
@@ -1375,12 +1392,14 @@ public:
 
                 me->setActive(true);
                 me->SetImmuneToPC(true);
+                me->SetDisableGravity(true);
+                me->SetAnimTier(AnimTier::Fly);
                 float moveTime = me->GetExactDist(&RimefangFlyPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
                 me->m_Events.AddEventAtOffset(new FrostwyrmLandEvent(*me, RimefangLandPos), Milliseconds(uint32(moveTime) + 250));
                 me->SetDefaultMovementType(IDLE_MOTION_TYPE);
                 me->GetMotionMaster()->MoveIdle();
                 me->StopMoving();
-                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, RimefangFlyPos);
+                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, RimefangFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
             }
         }
 
@@ -1393,6 +1412,7 @@ public:
             {
                 me->setActive(false);
                 me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
                 me->SetHomePosition(RimefangLandPos);
                 me->SetFacingTo(RimefangLandPos.GetOrientation());
                 me->SetImmuneToPC(false);
@@ -1400,6 +1420,7 @@ public:
             else if (point == POINT_LAND_GROUND)
             {
                 me->SetDisableGravity(false);
+                me->SetAnimTier(AnimTier::Ground);
                 me->SetReactState(REACT_DEFENSIVE);
                 if (Unit* victim = me->SelectVictim())
                     AttackStart(victim);
