@@ -1,0 +1,29 @@
+###################################################################################################
+#  mod-progressive-wotlk.conf
+#  AzerothCore Progressive WotLK Phase System
+###################################################################################################
+
+[worldserver]
+
+#
+#   ProgressiveWotlk.Enable
+#       Modulni yoqish/o'chirish.
+#       Default: 1 (yoqilgan)
+#
+ProgressiveWotlk.Enable = 1
+
+#
+#   ProgressiveWotlk.GMBypass
+#       Agar 1 bo'lsa, GM akkauntlar (IsGameMaster) barcha faza
+#       cheklovlaridan o'ta oladi — portal orqali ham, teleport orqali ham.
+#       Test uchun zarur. 0 qilmang, aks holda GM lar ham kira olmaydi.
+#       Default: 1
+#
+ProgressiveWotlk.GMBypass = 1
+
+#
+#   ProgressiveWotlk.AnnouncePhaseChange
+#       Faza o'zgarganda butun serverga xabar yuborilsinmi?
+#       Default: 1
+#
+ProgressiveWotlk.AnnouncePhaseChange = 1

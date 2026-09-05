@@ -1,0 +1,434 @@
+/*
+ * mod-progressive-wotlk
+ * AzerothCore Progressive WotLK Phase System
+ */
+
+#include "ProgressiveWotlk.h"
+
+#include "AllCreatureScript.h"
+#include "Chat.h"
+#include "DatabaseEnv.h"
+#include "LFGMgr.h"
+#include "Log.h"
+#include "LootMgr.h"
+#include "ObjectMgr.h"
+#include "Player.h"
+#include "PlayerScript.h"
+#include "WorldScript.h"
+#include "WorldSession.h"
+
+// ============================================================
+// Database & Configuration Helpers
+// ============================================================
+
+uint8 PW_GetCurrentPhase()
+{
+    QueryResult result = WorldDatabase.Query("SELECT `current_phase` FROM `progressive_phase` LIMIT 1");
+    if (!result)
+    {
+        LOG_ERROR("module", "[ProgressiveWotlk] progressive_phase jadvali topilmadi! Phase 1 da davom etamiz.");
+        return 1;
+    }
+    return (*result)[0].Get<uint8>();
+}
+
+void PW_ApplyPhaseDisables(uint8 currentPhase)
+{
+    // 1. Raid va Dungeon maplarini bloklash
+    uint32 mapBlocked = 0;
+    for (uint8 i = 0; i < PHASE_MAP_TABLE_SIZE; ++i)
+    {
+        const PhaseMapEntry& entry = PHASE_MAP_TABLE[i];
+        if (entry.unlockPhase > currentPhase)
+        {
+            sDisableMgr->AddDisable(DISABLE_TYPE_MAP, entry.mapId, 15, "", "");
+            sDisableMgr->AddDisable(DISABLE_TYPE_LFG_MAP, entry.mapId, 0, "", "");
+            ++mapBlocked;
+        }
+    }
+
+    // 2. Haftalik Raid Questlarni (Lan'dalock: 24579..24590) Phase 1-3 da bloklash
+    // (Bu questlar Frost va Triumph beradi, 3.3.0 ICC da paydo bo'lgan)
+    if (currentPhase < 4)
+    {
+        for (uint32 qid = 24579; qid <= 24590; ++qid)
+        {
+            sDisableMgr->AddDisable(DISABLE_TYPE_QUEST, qid, 0, "", "");
+        }
+    }
+
+    LOG_INFO("module", "[ProgressiveWotlk] Phase {} uchun {} ta map bloklandi.", currentPhase, mapBlocked);
+}
+
+void PW_ApplyPhaseQuestRewards(uint8 currentPhase)
+{
+    uint32 lfgHeroic1stItem = ITEM_EMBLEM_OF_VALOR;     // Phase 1: Valor
+    uint32 lfgHeroicNthItem = ITEM_EMBLEM_OF_HEROISM;   // Phase 1: Heroism
+    uint32 lfgNormal1stItem = ITEM_EMBLEM_OF_HEROISM;   // Phase 1: Heroism
+    uint32 dalaranHeroicItem = ITEM_EMBLEM_OF_VALOR;    // Phase 1: Valor (Proof of Demise)
+    uint32 dalaranNormalItem = ITEM_EMBLEM_OF_HEROISM;  // Phase 1: Heroism (Timear Foresees)
+
+    switch (currentPhase)
+    {
+        case 1:
+            lfgHeroic1stItem  = ITEM_EMBLEM_OF_VALOR;
+            lfgHeroicNthItem  = ITEM_EMBLEM_OF_HEROISM;
+            lfgNormal1stItem  = ITEM_EMBLEM_OF_HEROISM;
+            dalaranHeroicItem = ITEM_EMBLEM_OF_VALOR;
+            dalaranNormalItem = ITEM_EMBLEM_OF_HEROISM;
+            break;
+        case 2:
+            lfgHeroic1stItem  = ITEM_EMBLEM_OF_CONQUEST;
+            lfgHeroicNthItem  = ITEM_EMBLEM_OF_VALOR;
+            lfgNormal1stItem  = ITEM_EMBLEM_OF_HEROISM;
+            dalaranHeroicItem = ITEM_EMBLEM_OF_CONQUEST;
+            dalaranNormalItem = ITEM_EMBLEM_OF_HEROISM;
+            break;
+        case 3:
+            lfgHeroic1stItem  = ITEM_EMBLEM_OF_TRIUMPH;
+            lfgHeroicNthItem  = ITEM_EMBLEM_OF_CONQUEST;
+            lfgNormal1stItem  = ITEM_EMBLEM_OF_CONQUEST;
+            dalaranHeroicItem = ITEM_EMBLEM_OF_TRIUMPH;
+            dalaranNormalItem = ITEM_EMBLEM_OF_CONQUEST;
+            break;
+        case 4:
+        case 5:
+        default:
+            lfgHeroic1stItem  = ITEM_EMBLEM_OF_FROST;
+            lfgHeroicNthItem  = ITEM_EMBLEM_OF_TRIUMPH;
+            lfgNormal1stItem  = ITEM_EMBLEM_OF_TRIUMPH;
+            dalaranHeroicItem = ITEM_EMBLEM_OF_TRIUMPH;
+            dalaranNormalItem = ITEM_EMBLEM_OF_TRIUMPH;
+            break;
+    }
+
+    // LFG Random Dungeon Rewards
+    WorldDatabase.Execute("UPDATE `quest_template` SET `RewardItem1` = {}, `RewardAmount1` = 2 WHERE `ID` = 24788", lfgHeroic1stItem);
+    WorldDatabase.Execute("UPDATE `quest_template` SET `RewardItem1` = {}, `RewardAmount1` = 2 WHERE `ID` = 24789", lfgHeroicNthItem);
+    WorldDatabase.Execute("UPDATE `quest_template` SET `RewardItem1` = {}, `RewardAmount1` = 2 WHERE `ID` = 24790", lfgNormal1stItem);
+
+    // Dalaran Daily Quests
+    WorldDatabase.Execute("UPDATE `quest_template` SET `RewardItem1` = {}, `RewardAmount1` = 2 WHERE `ID` BETWEEN 13245 AND 13256", dalaranHeroicItem);
+    WorldDatabase.Execute("UPDATE `quest_template` SET `RewardItem1` = {}, `RewardAmount1` = 1 WHERE `ID` IN (13240, 13241, 13243, 13244)", dalaranNormalItem);
+
+    // Engine da questlarni qayta yuklaymiz
+    sObjectMgr->LoadQuests();
+    sLFGMgr->LoadRewards();
+
+    LOG_INFO("module", "[ProgressiveWotlk] Quest va LFG emblem mukofotlari Phase {} ga yangilandi.", currentPhase);
+}
+
+void PW_ApplyPhaseLoot(uint8 currentPhase)
+{
+    if (currentPhase == 1)
+    {
+        // 25-man Naxxramas, Obsidian Sanctum, Vault of Archavon -> Emblem of Valor (40753)
+        WorldDatabase.Execute(
+            "UPDATE `creature_loot_template` SET `Item` = 40753 WHERE `Item` IN (47241, 40752) AND `Entry` IN ("
+            "29249, 29268, 29278, 29615, 29701, 29718, 29940, 29955, 29324, 29373, 29417, 29448, 29991, 30061, "
+            "31311, 31535, 31520, 31534, 31722)"
+        );
+
+        // 10-man Naxx, OS, VoA va barcha 5-man Heroic bosslar -> Emblem of Heroism (40752)
+        WorldDatabase.Execute(
+            "UPDATE `creature_loot_template` SET `Item` = 40752 WHERE `Item` IN (47241, 40753) AND `Entry` IN ("
+            "15956, 15953, 15952, 15954, 15936, 16011, 16061, 16060, 16028, 15931, 15932, 15928, 15989, 15990, "
+            "28860, 30449, 30451, 30452, 31125, "
+            "29932, 30397, 30398, 30510, 30529, 30530, 30532, 30540, 30748, 30774, 30788, 30807, 30810, 31211, "
+            "31212, 31215, 31349, 31350, 31360, 31362, 31367, 31368, 31370, 31381, 31384, 31386, 31456, 31463, "
+            "31464, 31465, 31469, 31506, 31507, 31508, 31509, 31510, 31511, 31512, 31533, 31536, 31537, 31538, "
+            "31558, 31559, 31560, 31610, 31611, 31612, 31656, 31673, 31679, 32313)"
+        );
+
+        // Sandiqlar (Gameobjects): Four Horsemen, Eregos, Halls of Stone, Malygos Alexstrasza's Gift
+        WorldDatabase.Execute("UPDATE `gameobject_loot_template` SET `Item` = 40752 WHERE `Item` IN (47241, 40753) AND `Entry` IN (24524, 24589, 26260, 25192, 26094)");
+        WorldDatabase.Execute("UPDATE `gameobject_loot_template` SET `Item` = 40753 WHERE `Item` IN (47241, 40752) AND `Entry` IN (25193, 26097)");
+    }
+    else if (currentPhase == 2)
+    {
+        // Ulduar 10 -> Emblem of Valor (40753), Ulduar 25 -> Emblem of Conquest (45624)
+        WorldDatabase.Execute(
+            "UPDATE `creature_loot_template` SET `Item` = 40753 WHERE `Entry` IN ("
+            "32857, 32867, 32927, 33118, 33186, 33271, 33288, 33293, 33515)"
+        );
+        WorldDatabase.Execute(
+            "UPDATE `creature_loot_template` SET `Item` = 45624 WHERE `Entry` IN ("
+            "33694, 33693, 33692, 33190, 33724, 33449, 33955, 33885, 34175)"
+        );
+    }
+    else if (currentPhase == 3)
+    {
+        // Phase 3: 5-man Heroics va ToC -> Emblem of Triumph (47241)
+        WorldDatabase.Execute(
+            "UPDATE `creature_loot_template` SET `Item` = 47241 WHERE `Entry` IN ("
+            "15956, 15953, 15952, 15954, 15936, 16011, 16061, 16060, 16028, 15931, 15932, 15928, 15989, 15990, "
+            "29249, 29268, 29278, 29615, 29701, 29718, 29940, 29955, 29324, 29373, 29417, 29448, 29991, 30061, "
+            "28860, 31311, 30449, 30451, 30452, 31535, 31520, 31534, 31125, 31722, "
+            "29932, 30397, 30398, 30510, 30529, 30530, 30532, 30540, 30748, 30774, 30788, 30807, 30810, 31211, "
+            "31212, 31215, 31349, 31350, 31360, 31362, 31367, 31368, 31370, 31381, 31384, 31386, 31456, 31463, "
+            "31464, 31465, 31469, 31506, 31507, 31508, 31509, 31510, 31511, 31512, 31533, 31536, 31537, 31538, "
+            "31558, 31559, 31560, 31610, 31611, 31612, 31656, 31673, 31679, 32313)"
+        );
+    }
+
+    // Engine da loot jadvallarini qayta yuklaymiz
+    LoadLootTemplates_Creature();
+    LootTemplates_Creature.CheckLootRefs();
+    LoadLootTemplates_Gameobject();
+    LootTemplates_Gameobject.CheckLootRefs();
+
+    LOG_INFO("module", "[ProgressiveWotlk] Boss va sandiq loot jadvallari Phase {} ga yangilandi.", currentPhase);
+}
+
+bool PW_SetPhase(uint8 newPhase, std::string& outMessage)
+{
+    if (newPhase < MIN_PHASE || newPhase > MAX_PHASE)
+    {
+        outMessage = Acore::StringFormat("[ProgressiveWotlk] Xato: Faza {} dan {} gacha bo'lishi kerak.", MIN_PHASE, MAX_PHASE);
+        return false;
+    }
+
+    uint8 oldPhase = PW_GetCurrentPhase();
+    if (newPhase == oldPhase)
+    {
+        outMessage = Acore::StringFormat("[ProgressiveWotlk] Server allaqachon {} fazada.", newPhase);
+        return false;
+    }
+
+    // 1. Bazani yangilash
+    WorldDatabase.Execute("UPDATE `progressive_phase` SET `current_phase` = {}, `activated_at` = NOW()", newPhase);
+
+    // 2. Disables jadvallarini qayta yuklash va qo'llash
+    sDisableMgr->LoadDisables();
+    PW_ApplyPhaseDisables(newPhase);
+
+    // 3. Quest va Loot mukofotlarini yangilash
+    PW_ApplyPhaseQuestRewards(newPhase);
+    PW_ApplyPhaseLoot(newPhase);
+
+    // 4. Yangi ochilgan kontent nomini yig'ish
+    std::string unlockedNames;
+    for (uint8 i = 0; i < PHASE_MAP_TABLE_SIZE; ++i)
+    {
+        const PhaseMapEntry& entry = PHASE_MAP_TABLE[i];
+        if (entry.unlockPhase == newPhase)
+        {
+            if (!unlockedNames.empty())
+                unlockedNames += ", ";
+            unlockedNames += entry.mapName;
+        }
+    }
+
+    if (unlockedNames.empty())
+        unlockedNames = "(yangi raid qo'shilmadi)";
+
+    outMessage = Acore::StringFormat(
+        "|cff00ff00[Progressive WotLK]|r Faza {} boshlandi! Yangi ochilgan kontent: {}",
+        newPhase, unlockedNames
+    );
+
+    return true;
+}
+
+std::string PW_GetStatusText(uint8 currentPhase)
+{
+    std::string text = Acore::StringFormat(
+        "|cff00ccff[Progressive WotLK] Joriy faza: {}|r\n", currentPhase
+    );
+
+    text += "|cffffff00Ochiq Raidlar & Dungeonlar:|r\n";
+    text += "  Naxxramas, Obsidian Sanctum, Eye of Eternity, Vault of Archavon (Archavon)\n";
+
+    for (uint8 i = 0; i < PHASE_MAP_TABLE_SIZE; ++i)
+    {
+        const PhaseMapEntry& entry = PHASE_MAP_TABLE[i];
+        if (entry.unlockPhase <= currentPhase)
+            text += Acore::StringFormat("  {} (Phase {} da ochildi)\n", entry.mapName, entry.unlockPhase);
+    }
+
+    text += "|cffff4444Yopiq Raidlar:|r\n";
+    bool anyLocked = false;
+    for (uint8 i = 0; i < PHASE_MAP_TABLE_SIZE; ++i)
+    {
+        const PhaseMapEntry& entry = PHASE_MAP_TABLE[i];
+        if (entry.unlockPhase > currentPhase)
+        {
+            text += Acore::StringFormat("  {} (Phase {} da ochiladi)\n", entry.mapName, entry.unlockPhase);
+            anyLocked = true;
+        }
+    }
+    if (!anyLocked)
+        text += "  (hamma kontent ochiq!)\n";
+
+    text += "|cffffff00Emblem Mukofotlari:|r\n";
+    if (currentPhase == 1)
+    {
+        text += "  5-man Heroic & 10-man Raids: Emblem of Heroism\n";
+        text += "  25-man Raids & Daily Heroic: Emblem of Valor\n";
+    }
+    else if (currentPhase == 2)
+    {
+        text += "  Daily Heroic & 25-man Ulduar: Emblem of Conquest\n";
+        text += "  10-man Ulduar: Emblem of Valor\n";
+    }
+    else if (currentPhase == 3)
+    {
+        text += "  ToC & 5-man Heroic & Daily Heroic: Emblem of Triumph\n";
+    }
+    else
+    {
+        text += "  ICC & Daily Heroic: Emblem of Frost\n";
+    }
+
+    return text;
+}
+
+// ============================================================
+// WorldScript — Server Startup da to'liq progressiv sozlash
+// ============================================================
+
+class ProgressiveWotlkWorldScript : public WorldScript
+{
+public:
+    ProgressiveWotlkWorldScript() : WorldScript("ProgressiveWotlkWorldScript") { }
+
+    void OnStartup() override
+    {
+        PWConfig::Load();
+
+        if (!PWConfig::Enable)
+        {
+            LOG_INFO("module", "[ProgressiveWotlk] Modul o'chirilgan (ProgressiveWotlk.Enable = 0).");
+            return;
+        }
+
+        uint8 currentPhase = PW_GetCurrentPhase();
+        LOG_INFO("module", "[ProgressiveWotlk] Progressive WotLK yuklanmoqda... Joriy faza: {}.", currentPhase);
+
+        PW_ApplyPhaseDisables(currentPhase);
+        PW_ApplyPhaseQuestRewards(currentPhase);
+        PW_ApplyPhaseLoot(currentPhase);
+    }
+
+    void OnAfterConfigLoad(bool reload) override
+    {
+        PWConfig::Load(reload);
+    }
+};
+
+// ============================================================
+// PlayerScript — Map va Portalga kirishni himoyalash
+// ============================================================
+
+class ProgressiveWotlkPlayerScript : public PlayerScript
+{
+public:
+    ProgressiveWotlkPlayerScript() : PlayerScript("ProgressiveWotlkPlayerScript") { }
+
+    bool OnPlayerCanEnterMap(Player* player, MapEntry const* entry,
+                             InstanceTemplate const* /*instance*/,
+                             MapDifficulty const* /*mapDiff*/,
+                             bool /*loginCheck*/) override
+    {
+        if (!PWConfig::Enable)
+            return true;
+
+        if (player->IsGameMaster() && PWConfig::GMBypass)
+            return true;
+
+        uint8 currentPhase = PW_GetCurrentPhase();
+
+        for (uint8 i = 0; i < PHASE_MAP_TABLE_SIZE; ++i)
+        {
+            const PhaseMapEntry& e = PHASE_MAP_TABLE[i];
+            if (e.mapId == entry->MapID && e.unlockPhase > currentPhase)
+            {
+                ChatHandler(player->GetSession()).PSendSysMessage(
+                    "|cffff4444[Progressive WotLK]|r %s hali ochilmagan. (Phase %u da ochiladi)",
+                    e.mapName,
+                    static_cast<uint32>(e.unlockPhase)
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
+// ============================================================
+// AllCreatureScript — Future Quartermasters va VoA Bosslarini boshqarish
+// ============================================================
+
+class ProgressiveWotlkCreatureScript : public AllCreatureScript
+{
+public:
+    ProgressiveWotlkCreatureScript() : AllCreatureScript("ProgressiveWotlkCreatureScript") { }
+
+    void OnCreatureAddWorld(Creature* creature) override
+    {
+        if (!PWConfig::Enable)
+            return;
+
+        uint8 currentPhase = PW_GetCurrentPhase();
+        uint32 entry = creature->GetEntry();
+
+        for (uint8 i = 0; i < PHASE_CREATURE_TABLE_SIZE; ++i)
+        {
+            const PhaseCreatureEntry& pc = PHASE_CREATURE_TABLE[i];
+            if (pc.creatureId == entry && pc.unlockPhase > currentPhase)
+            {
+                // Hali ochilmagan NPC larni (masalan VoA dagi Emalon/Koralon yoki Dalaran Frost vendor) yashirish
+                creature->SetVisible(false);
+                creature->SetPhaseMask(0, true);
+                return;
+            }
+        }
+    }
+
+    bool CanCreatureGossipHello(Player* player, Creature* creature) override
+    {
+        if (!PWConfig::Enable)
+            return false;
+
+        if (player->IsGameMaster() && PWConfig::GMBypass)
+            return false;
+
+        uint8 currentPhase = PW_GetCurrentPhase();
+        uint32 entry = creature->GetEntry();
+
+        for (uint8 i = 0; i < PHASE_CREATURE_TABLE_SIZE; ++i)
+        {
+            const PhaseCreatureEntry& pc = PHASE_CREATURE_TABLE[i];
+            if (pc.creatureId == entry && pc.unlockPhase > currentPhase)
+            {
+                ChatHandler(player->GetSession()).PSendSysMessage(
+                    "|cffff4444[Progressive WotLK]|r Bu savdogar hali mavjud emas. (Phase %u da ochiladi)",
+                    static_cast<uint32>(pc.unlockPhase)
+                );
+                return true; // Interaction bloklanadi
+            }
+        }
+
+        return false;
+    }
+};
+
+// ============================================================
+// Script Loader
+// ============================================================
+
+void AddSC_ProgressiveWotlk()
+{
+    new ProgressiveWotlkWorldScript();
+    new ProgressiveWotlkPlayerScript();
+    new ProgressiveWotlkCreatureScript();
+}
+
+void AddSC_ProgressiveWotlkCommands();
+
+void Addmod_progressive_wotlkScripts()
+{
+    AddSC_ProgressiveWotlk();
+    AddSC_ProgressiveWotlkCommands();
+}

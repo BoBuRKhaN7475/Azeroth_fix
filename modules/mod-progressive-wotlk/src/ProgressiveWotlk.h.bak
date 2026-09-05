@@ -1,0 +1,112 @@
+/*
+ * mod-progressive-wotlk
+ * AzerothCore Progressive WotLK Phase System
+ */
+
+#ifndef PROGRESSIVE_WOTLK_H
+#define PROGRESSIVE_WOTLK_H
+
+#include "Common.h"
+#include "Config.h"
+#include "DisableMgr.h"
+#include "Player.h"
+#include "World.h"
+
+// Cached Configuration
+struct PWConfig
+{
+    static inline bool Enable = true;
+    static inline bool GMBypass = true;
+    static inline bool AnnouncePhaseChange = true;
+
+    static void Load(bool /*reload*/ = false)
+    {
+        Enable = sConfigMgr->GetOption<bool>("ProgressiveWotlk.Enable", true, false);
+        GMBypass = sConfigMgr->GetOption<bool>("ProgressiveWotlk.GMBypass", true, false);
+        AnnouncePhaseChange = sConfigMgr->GetOption<bool>("ProgressiveWotlk.AnnouncePhaseChange", true, false);
+    }
+};
+
+// Item IDs for WotLK Emblems
+enum WotLKEmblems : uint32
+{
+    ITEM_EMBLEM_OF_HEROISM   = 40752, // Phase 1 (5-man HC, 10-man Raids)
+    ITEM_EMBLEM_OF_VALOR     = 40753, // Phase 1 (25-man Raids, Daily HC)
+    ITEM_EMBLEM_OF_CONQUEST  = 45624, // Phase 2 (25-man Ulduar, Daily HC)
+    ITEM_EMBLEM_OF_TRIUMPH   = 47241, // Phase 3 (ToC, 5-man HC catchup)
+    ITEM_EMBLEM_OF_FROST     = 49426, // Phase 4 (ICC, Daily HC)
+};
+
+// Map gatelari
+struct PhaseMapEntry
+{
+    uint8       unlockPhase;
+    uint32      mapId;
+    const char* mapName;
+};
+
+static const PhaseMapEntry PHASE_MAP_TABLE[] =
+{
+    // Phase 2
+    { 2, 249, "Onyxia's Lair"            },
+    { 2, 603, "Ulduar"                   },
+
+    // Phase 3
+    { 3, 649, "Trial of the Crusader"    },
+    { 3, 650, "Trial of the Champion"    },
+
+    // Phase 4
+    { 4, 631, "Icecrown Citadel"         },
+    { 4, 632, "Forge of Souls"           },
+    { 4, 658, "Pit of Saron"             },
+    { 4, 668, "Halls of Reflection"      },
+
+    // Phase 5
+    { 5, 724, "Ruby Sanctum"             },
+};
+
+static const uint8 PHASE_MAP_TABLE_SIZE = sizeof(PHASE_MAP_TABLE) / sizeof(PHASE_MAP_TABLE[0]);
+
+// Dalaran Emblem Quartermasters & VoA Bosses
+struct PhaseCreatureEntry
+{
+    uint8       unlockPhase;
+    uint32      creatureId;
+    const char* creatureName;
+};
+
+static const PhaseCreatureEntry PHASE_CREATURE_TABLE[] =
+{
+    // Phase 2 Quartermasters & VoA Bosses
+    { 2, 33963, "Magister Sarien (Conquest Quartermaster)"    },
+    { 2, 33964, "Arcanist Firael (Conquest Quartermaster)"    },
+    { 2, 33993, "Emalon the Storm Watcher (10-man)"          },
+    { 2, 33994, "Emalon the Storm Watcher (25-man)"          },
+
+    // Phase 3 Quartermasters & VoA Bosses
+    { 3, 35494, "Arcanist Miluria (Triumph Quartermaster)"   },
+    { 3, 35495, "Magistrix Vesara (Triumph Quartermaster)"   },
+    { 3, 35013, "Koralon the Flame Watcher (10-man)"         },
+    { 3, 35360, "Koralon the Flame Watcher (25-man)"         },
+
+    // Phase 4 Quartermasters & VoA Bosses
+    { 4, 37941, "Magister Arlan (Frost Quartermaster)"       },
+    { 4, 37942, "Arcanist Uovril (Frost Quartermaster)"      },
+    { 4, 38433, "Toravon the Ice Watcher (10-man)"           },
+    { 4, 38462, "Toravon the Ice Watcher (25-man)"           },
+};
+
+static const uint8 PHASE_CREATURE_TABLE_SIZE = sizeof(PHASE_CREATURE_TABLE) / sizeof(PHASE_CREATURE_TABLE[0]);
+
+static const uint8 MAX_PHASE = 5;
+static const uint8 MIN_PHASE = 1;
+
+// Function declarations
+uint8       PW_GetCurrentPhase();
+void        PW_ApplyPhaseDisables(uint8 currentPhase);
+void        PW_ApplyPhaseQuestRewards(uint8 currentPhase);
+void        PW_ApplyPhaseLoot(uint8 currentPhase);
+bool        PW_SetPhase(uint8 newPhase, std::string& outMessage);
+std::string PW_GetStatusText(uint8 currentPhase);
+
+#endif // PROGRESSIVE_WOTLK_H
