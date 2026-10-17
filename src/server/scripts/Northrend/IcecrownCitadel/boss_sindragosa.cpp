@@ -168,7 +168,6 @@ Position const RimefangFlyPos      = {4413.309f, 2456.421f, 233.3795f, 2.890186f
 Position const RimefangLandPos     = {4413.309f, 2456.421f, 203.3848f, 2.890186f};
 Position const SpinestalkerFlyPos  = {4418.895f, 2514.233f, 230.4864f, 3.396045f};
 Position const SpinestalkerLandPos = {4418.895f, 2514.233f, 203.3848f, 3.396045f};
-Position const SindragosaFlyInPos  = {4420.190f, 2484.360f, 232.5150f, 3.141593f};
 Position const SindragosaLandPos   = {4419.190f, 2484.570f, 203.3848f, 3.141593f};
 Position const SindragosaAirPos    = {4475.990f, 2484.430f, 247.9340f, 3.141593f};
 Position const SindragosaAirPosFar = {4525.600f, 2485.150f, 245.0820f, 3.141593f};
@@ -434,9 +433,7 @@ public:
                 me->SetAnimTier(AnimTier::Fly);
                 me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                 me->SetSpeed(MOVE_RUN, 4.28571f);
-                float moveTime = me->GetExactDist(&SindragosaFlyInPos) / (me->GetSpeed(MOVE_RUN) * 0.001f);
-                me->m_Events.AddEventAtOffset(new FrostwyrmLandEvent(*me, SindragosaLandPos), Milliseconds(uint32(moveTime) + 250));
-                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyInPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
+                me->GetMotionMaster()->MovePoint(POINT_FROSTWYRM_FLY_IN, SindragosaFlyPos, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
 
                 if (!instance->GetData(DATA_SINDRAGOSA_INTRO))
                 {
@@ -459,6 +456,9 @@ public:
 
             switch (point)
             {
+                case POINT_FROSTWYRM_FLY_IN:
+                    me->GetMotionMaster()->MoveLand(POINT_FROSTWYRM_LAND, SindragosaLandPos, 10.0f);
+                    break;
                 case POINT_FROSTWYRM_LAND:
                     me->setActive(false);
                     me->SetCanFly(false);
