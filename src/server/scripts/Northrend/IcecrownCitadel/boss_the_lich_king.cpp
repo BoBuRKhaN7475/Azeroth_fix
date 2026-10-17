@@ -354,9 +354,14 @@ enum MiscData
 #define DATA_PLAGUE_STACK 70337
 #define DATA_VILE 45814622
 
+bool IsValidPlatformPosition(Position const& pos)
+{
+    return pos.GetExactDist2dSq(&CenterPosition) < 90.0f * 90.0f && pos.GetPositionZ() > 840.0f && pos.GetPositionZ() < 875.0f;
+}
+
 bool IsValidPlatformTarget(Unit const* target)
 {
-    return target->GetExactDist2dSq(&CenterPosition) < 90.0f * 90.0f && target->GetPositionZ() > 840.0f && target->GetPositionZ() < 875.0f;
+    return IsValidPlatformPosition(*target);
 }
 
 void SendPacketToPlayers(WorldPacket const* data, Unit* source)
@@ -447,6 +452,30 @@ public:
         if (target->HasAnyAuras(SPELL_HARVEST_SOUL_VALKYR, SPELL_VALKYR_TARGET_SEARCH))
             return false;
         if (!_source->IsWithinLOSInMap(target))
+            return false;
+        return true;
+    }
+
+private:
+    Creature const* _source;
+};
+
+struct RagingSpiritTargetSelector
+{
+public:
+    RagingSpiritTargetSelector(Creature* source) : _source(source) { }
+    bool operator()(Unit const* target) const
+    {
+        if (!target)
+            return false;
+        if (!target->IsAlive())
+            return false;
+        if (!target->IsPlayer())
+            return false;
+        if (_source->GetExactDist(target) > 100.0f)
+            return false;
+        // the spirit is summoned at the target's own position, so the target must be on the platform
+        if (!IsValidPlatformTarget(target) || target->GetVehicle())
             return false;
         return true;
     }
@@ -1084,7 +1113,7 @@ public:
                     events.ScheduleEvent(EVENT_SUMMON_ICE_SPHERE, 7500ms, EVENT_GROUP_ABILITIES);
                     break;
                 case EVENT_SUMMON_RAGING_SPIRIT:
-                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 100.0f, true))
+                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, RagingSpiritTargetSelector(me)))
                         me->CastSpell(target, SPELL_RAGING_SPIRIT, false);
                     events.ScheduleEvent(EVENT_SUMMON_RAGING_SPIRIT, (!HealthAbovePct(40) ? 15s : 20s), EVENT_GROUP_ABILITIES);
                     break;
@@ -2237,8 +2266,27 @@ public:
             }
         }
 
-        void IsSummonedBy(WorldObject* /*summoner*/) override
+        void IsSummonedBy(WorldObject* summoner) override
         {
+            // no floor under the summon destination drops the spirit to the terrain, ~990 yd below the platform
+            if (!IsValidPlatformPosition(*me))
+            {
+                if (summoner && IsValidPlatformPosition(*summoner))
+                    me->NearTeleportTo(summoner->GetPositionX(), summoner->GetPositionY(), summoner->GetPositionZ(), me->GetOrientation());
+                else
+                {
+                    if (Player* plr = ScriptedAI::SelectTargetFromPlayerList(100.0f, 0, true))
+                    {
+                        if (IsValidPlatformPosition(*plr))
+                            me->NearTeleportTo(plr->GetPositionX(), plr->GetPositionY(), plr->GetPositionZ(), me->GetOrientation());
+                        else
+                            me->NearTeleportTo(CenterPosition.GetPositionX(), CenterPosition.GetPositionY(), 840.86f, me->GetOrientation());
+                    }
+                    else
+                        me->NearTeleportTo(CenterPosition.GetPositionX(), CenterPosition.GetPositionY(), 840.86f, me->GetOrientation());
+                }
+            }
+
             // player is the spellcaster so register summon manually
             if (Creature* lichKing = ObjectAccessor::GetCreature(*me, _instance->GetGuidData(DATA_THE_LICH_KING)))
                 lichKing->AI()->JustSummoned(me);
@@ -2263,6 +2311,14 @@ public:
 
         void UpdateAI(uint32 diff) override
         {
+            if (!IsValidPlatformPosition(*me))
+            {
+                if (Player* plr = ScriptedAI::SelectTargetFromPlayerList(100.0f, 0, true))
+                    me->NearTeleportTo(plr->GetPositionX(), plr->GetPositionY(), plr->GetPositionZ(), me->GetOrientation());
+                else
+                    me->NearTeleportTo(CenterPosition.GetPositionX(), CenterPosition.GetPositionY(), 840.86f, me->GetOrientation());
+            }
+
             UpdateVictim();
 
             _events.Update(diff);

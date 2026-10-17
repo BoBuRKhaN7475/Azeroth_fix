@@ -115,13 +115,29 @@ GraveyardStruct const* Graveyard::GetClosestGraveyard(Player* player, TeamId tea
     float  y     = loc.GetPositionY();
     float  z     = loc.GetPositionZ();
 
+    MapEntry const* map = sMapStore.LookupEntry(mapId);
+
     uint32 zoneId = 0;
     uint32 areaId = 0;
     player->GetZoneAndAreaId(zoneId, areaId);
+    if (!zoneId && !areaId)
+    {
+        sMapMgr->GetZoneAndAreaId(player->GetPhaseMask(), zoneId, areaId, mapId, x, y, z);
+    }
 
     if (!zoneId && !areaId)
     {
-        if (z > -500)
+        if (map && map->IsDungeon())
+        {
+            int32 entranceMap = -1;
+            float entranceX = 0.0f, entranceY = 0.0f;
+            if (map->GetEntrancePos(entranceMap, entranceX, entranceY) && entranceMap >= 0)
+            {
+                sMapMgr->GetZoneAndAreaId(player->GetPhaseMask(), zoneId, areaId, uint32(entranceMap), entranceX, entranceY, 0.0f);
+            }
+        }
+
+        if (!zoneId && !areaId && z > -500)
         {
             LOG_ERROR("sql.sql", "GetClosestGraveyard: unable to find zoneId and areaId for map {} coords ({}, {}, {})", mapId, x, y, z);
             return GetDefaultGraveyard(teamId);
@@ -155,13 +171,30 @@ GraveyardStruct const* Graveyard::GetClosestGraveyard(Player* player, TeamId tea
         }
     }
 
-    MapEntry const* map = sMapStore.LookupEntry(mapId);
-
     // not need to check validity of map object; MapId _MUST_ be valid here
     if (range.first == range.second && !map->IsBattlegroundOrArena())
     {
-        LOG_ERROR("sql.sql", "Table `graveyard_zone` incomplete: Zone {} Team {} does not have a linked graveyard.", zoneId, teamId);
-        return GetDefaultGraveyard(teamId);
+        if (map && map->IsDungeon())
+        {
+            int32 entranceMap = -1;
+            float entranceX = 0.0f, entranceY = 0.0f;
+            if (map->GetEntrancePos(entranceMap, entranceX, entranceY) && entranceMap >= 0)
+            {
+                uint32 entZoneId = 0, entAreaId = 0;
+                sMapMgr->GetZoneAndAreaId(player->GetPhaseMask(), entZoneId, entAreaId, uint32(entranceMap), entranceX, entranceY, 0.0f);
+                range = GraveyardStore.equal_range(entAreaId);
+                if (range.first == range.second)
+                {
+                    range = GraveyardStore.equal_range(entZoneId);
+                }
+            }
+        }
+
+        if (range.first == range.second)
+        {
+            LOG_ERROR("sql.sql", "Table `graveyard_zone` incomplete: Zone {} Team {} does not have a linked graveyard.", zoneId, teamId);
+            return GetDefaultGraveyard(teamId);
+        }
     }
 
     // at corpse map

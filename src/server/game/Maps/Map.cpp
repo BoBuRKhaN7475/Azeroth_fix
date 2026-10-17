@@ -1287,6 +1287,11 @@ uint32 Map::GetAreaId(uint32 phaseMask, float x, float y, float z) const
     else
         areaId = gridAreaId;
 
+    // If still no area found, but we are inside/under a WMO, fallback to that WMO's area
+    if (!areaId && hasVmapArea)
+        if (WMOAreaTableEntry const* wmoEntry = GetWMOAreaTableEntryByTripple(rootId, adtId, groupId))
+            areaId = wmoEntry->areaId;
+
     if (!areaId)
         areaId = i_mapEntry->linked_zone;
 
