@@ -16,6 +16,7 @@
  */
 
 #include "AccountMgr.h"
+#include "Chat.h"
 #include "GameTime.h"
 #include "InstancePackets.h"
 #include "MapMgr.h"
@@ -44,7 +45,7 @@ void Player::UpdateSpeakTime(ChatFloodThrottle::Index index)
          case ChatFloodThrottle::REGULAR:
              limit = sWorld->getIntConfig(CONFIG_CHATFLOOD_MESSAGE_COUNT);
              delay = sWorld->getIntConfig(CONFIG_CHATFLOOD_MESSAGE_DELAY);
-             [[fallthrough]];
+             break;
          default:
              return;
     }
@@ -57,7 +58,11 @@ void Player::UpdateSpeakTime(ChatFloodThrottle::Index index)
             // prevent overwrite mute time, if message send just before mutes set, for example.
             time_t new_mute = current + sWorld->getIntConfig(CONFIG_CHATFLOOD_MUTE_TIME);
             if (GetSession()->m_muteTime < new_mute)
+            {
                 GetSession()->m_muteTime = new_mute;
+                if (index == ChatFloodThrottle::REGULAR)
+                    ChatHandler(GetSession()).PSendSysMessage("|cffff2020[Внимание] Вы получили мут на 1 минуту за флуд в чате.|r");
+            }
 
             m_chatFloodData[index].Count = 0;
         }
@@ -418,6 +423,9 @@ void Player::UpdateDuelFlag(time_t currTime)
     if (duel && duel->State == DUEL_STATE_COUNTDOWN && duel->StartTime <= currTime)
     {
         sScriptMgr->OnPlayerDuelStart(this, duel->Opponent);
+
+        ResetDuelCombatState();
+        duel->Opponent->ResetDuelCombatState();
 
         SetUInt32Value(PLAYER_DUEL_TEAM, 1);
         duel->Opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);

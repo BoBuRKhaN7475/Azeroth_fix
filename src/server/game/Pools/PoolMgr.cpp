@@ -22,6 +22,7 @@
 #include "ObjectMgr.h"
 #include "QueryResult.h"
 #include "Transport.h"
+#include "DisableMgr.h"
 
 ////////////////////////////////////////////////////////////
 // template class SpawnedPoolData
@@ -496,12 +497,15 @@ void PoolGroup<Quest>::SpawnObject(SpawnedPoolData& spawns, uint32 limit, uint32
             do
             {
                 uint32 questId = result->Fetch()[0].Get<uint32>();
+                if (sDisableMgr->IsDisabledFor(DISABLE_TYPE_QUEST, questId, nullptr))
+                    continue;
                 spawns.AddSpawn<Quest>(questId, poolId);
                 PoolObject tempObj(questId, 0.0f);
                 Spawn1Object(spawns, &tempObj);
                 --limit;
             } while (result->NextRow() && limit);
-            return;
+            if (limit == 0)
+                return;
         }
     }
 
@@ -512,6 +516,8 @@ void PoolGroup<Quest>::SpawnObject(SpawnedPoolData& spawns, uint32 limit, uint32
     for (PoolObjectList::iterator itr = EqualChanced.begin(); itr != EqualChanced.end(); ++itr)
     {
         if (spawns.IsSpawnedObject<Quest>(itr->guid))
+            continue;
+        if (sDisableMgr->IsDisabledFor(DISABLE_TYPE_QUEST, itr->guid, nullptr))
             continue;
         newQuests.insert(itr->guid);
     }
@@ -525,7 +531,8 @@ void PoolGroup<Quest>::SpawnObject(SpawnedPoolData& spawns, uint32 limit, uint32
         do
         {
             uint32 questId = Acore::Containers::SelectRandomContainerElement(currentQuests);
-            newQuests.insert(questId);
+            if (!sDisableMgr->IsDisabledFor(DISABLE_TYPE_QUEST, questId, nullptr))
+                newQuests.insert(questId);
             currentQuests.erase(questId);
         } while (newQuests.size() < limit && !currentQuests.empty()); // failsafe
     }

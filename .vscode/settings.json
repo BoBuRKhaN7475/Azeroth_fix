@@ -130,4 +130,15 @@
     "C_Cpp.default.compilerPath": "/usr/bin/clang",
     "cmake.sourceDirectory": ["${workspaceFolder}"],
     "cmake.buildDirectory": "${workspaceFolder}/var/build",
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/var/**": true,
+        "**/.git/**": true,
+        "**/data/**": true
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/var": true,
+        "**/data": true
+    }
 }

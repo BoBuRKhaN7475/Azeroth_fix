@@ -1834,6 +1834,7 @@ public:
     void RemoveCategoryCooldown(uint32 cat);
     void RemoveArenaSpellCooldowns(bool removeActivePetCooldowns = false);
     void RemoveAllSpellCooldown();
+    void ResetDuelCombatState();
     void _LoadSpellCooldowns(PreparedQueryResult result);
     void _SaveSpellCooldowns(CharacterDatabaseTransaction trans, bool logout);
     uint32 GetLastPotionId() { return m_lastPotionId; }
@@ -2093,6 +2094,7 @@ public:
     bool IsMirrorTimerActive(MirrorTimerType type) { return m_MirrorTimer[type] == getMaxTimer(type); }
 
     bool CanJoinConstantChannelInZone(ChatChannelsEntry const* channel, AreaTableEntry const* zone);
+    [[nodiscard]] char const* GetChannelPattern(ChatChannelsEntry const* channel) const;
 
     void JoinedChannel(Channel* c);
     void LeftChannel(Channel* c);

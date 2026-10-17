@@ -23,6 +23,7 @@
 #include "ScriptedGossip.h"
 #include "TaskScheduler.h"
 #include "World.h"
+#include "PoolMgr.h"
 
 class npc_steam_powered_auctioneer : public CreatureScript
 {
@@ -378,6 +379,9 @@ public:
                     if (!quest || !quest->IsWeekly())
                         continue;
 
+                    if (sPoolMgr->IsPartOfAPool<Quest>(questId) && !sPoolMgr->IsSpawnedObject<Quest>(questId))
+                        continue;
+
                     uint32 newEntry = GetImageEntry(questId);
                     if (_summonGUID.GetEntry() != newEntry)
                     {
@@ -389,6 +393,7 @@ public:
                             z += 3.0f;
                         me->SummonCreature(newEntry, 5703.077f, 583.9757f, z, 3.926991f);
                     }
+                    break;
                 }
             }
         }
@@ -554,6 +559,13 @@ struct npc_minigob_manabonk : public ScriptedAI
         CharacterDatabase.CommitTransaction(trans);
     }
 
+    void DespawnMinigob()
+    {
+        me->SetRespawnDelay(43200);
+        me->SaveRespawnTime();
+        me->DespawnOrUnsummon();
+    }
+
     void UpdateAI(uint32 diff) override
     {
         if (!sWorld->getBoolConfig(CONFIG_MINIGOB_MANABONK))
@@ -582,14 +594,14 @@ struct npc_minigob_manabonk : public ScriptedAI
                     {
                         if (player->IsGameMaster())
                         {
-                            me->DespawnOrUnsummon();
+                            DespawnMinigob();
                             return;
                         }
                         DoCast(player, SPELL_MANABONKED);
                         SendMailToPlayer(player);
                     }
                     else
-                        me->DespawnOrUnsummon();
+                        DespawnMinigob();
                     events.ScheduleEvent(EVENT_LAUGH, 2s);
                     break;
                 case EVENT_LAUGH:
@@ -609,7 +621,7 @@ struct npc_minigob_manabonk : public ScriptedAI
                     DoCastSelf(SPELL_IMPROVED_BLINK);
                     break;
                 case EVENT_DESPAWN:
-                    me->DespawnOrUnsummon();
+                    DespawnMinigob();
                     break;
                 default:
                     break;

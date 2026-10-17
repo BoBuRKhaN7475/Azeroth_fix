@@ -30,6 +30,17 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
 
     recvPacket >> channelId >> unknown1 >> unknown2 >> channelName >> password;
 
+    std::wstring wchan;
+    if (Utf8toWStr(channelName, wchan))
+    {
+        wstrToLower(wchan);
+        if (wchan == L"поиск спутников" || wchan == L"поискспутников" || wchan == L"lookingforgroup")
+        {
+            channelName = "Поискспутников";
+            channelId = 26;
+        }
+    }
+
     LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL {} Channel: {}, unk1: {}, unk2: {}, channel: {}, password: {}", GetPlayerInfo(), channelId, unknown1, unknown2, channelName, password);
     if (channelId)
     {
@@ -78,6 +89,14 @@ void WorldSession::HandleLeaveChannel(WorldPacket& recvPacket)
     uint32 unk;
     std::string channelName;
     recvPacket >> unk >> channelName;
+
+    std::wstring wchan;
+    if (Utf8toWStr(channelName, wchan))
+    {
+        wstrToLower(wchan);
+        if (wchan == L"поиск спутников" || wchan == L"поискспутников" || wchan == L"lookingforgroup")
+            channelName = "Поискспутников";
+    }
 
     LOG_DEBUG("chat.system", "CMSG_LEAVE_CHANNEL {} Channel: {}, unk1: {}",
                    GetPlayerInfo(), channelName, unk);

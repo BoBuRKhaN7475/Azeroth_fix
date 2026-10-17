@@ -318,25 +318,19 @@ bool Player::CanCompleteQuest(uint32 quest_id, QuestStatusData const* q_savedSta
 
         if (q_status.Status == QUEST_STATUS_INCOMPLETE)
         {
-            if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_DELIVER))
+            for (uint8 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; i++)
             {
-                for (uint8 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; i++)
-                {
-                    if (qInfo->RequiredItemCount[i] != 0 && q_status.ItemCount[i] < qInfo->RequiredItemCount[i])
-                        return false;
-                }
+                if (qInfo->RequiredItemCount[i] != 0 && q_status.ItemCount[i] < qInfo->RequiredItemCount[i])
+                    return false;
             }
 
-            if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL | QUEST_SPECIAL_FLAGS_CAST | QUEST_SPECIAL_FLAGS_SPEAKTO))
+            for (uint8 i = 0; i < QUEST_OBJECTIVES_COUNT; i++)
             {
-                for (uint8 i = 0; i < QUEST_OBJECTIVES_COUNT; i++)
-                {
-                    if (qInfo->RequiredNpcOrGo[i] == 0)
-                        continue;
+                if (qInfo->RequiredNpcOrGo[i] == 0)
+                    continue;
 
-                    if (qInfo->RequiredNpcOrGoCount[i] != 0 && q_status.CreatureOrGOCount[i] < qInfo->RequiredNpcOrGoCount[i])
-                        return false;
-                }
+                if (qInfo->RequiredNpcOrGoCount[i] != 0 && q_status.CreatureOrGOCount[i] < qInfo->RequiredNpcOrGoCount[i])
+                    return false;
             }
 
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_PLAYER_KILL))

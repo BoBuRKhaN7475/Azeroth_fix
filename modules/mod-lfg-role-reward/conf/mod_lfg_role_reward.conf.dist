@@ -1,0 +1,107 @@
+#
+# mod-lfg-role-reward configuration file (Patch 3.0.0 Adapted)
+#
+
+[worldserver]
+
+###################################################################################################
+# LFG ROLE REWARD (CALL TO ARMS) SOZLAMALARI
+#
+#    LfgRoleReward.Enable
+#        Description: Modulni yoqish (1) yoki o'chirish (0).
+#        Default:     1
+
+LfgRoleReward.Enable = 1
+
+#
+#    LfgRoleReward.AnnounceOnLogin
+#        Description: O'yinchi kirganda bonuslar faolligi haqida xabar berish.
+#        Default:     1
+
+LfgRoleReward.AnnounceOnLogin = 1
+
+#
+#    LfgRoleReward.RequireRandomGroup
+#        Description: Guruhda kamida 1 ta tasodifiy (random) o'yinchi bo'lishi shartmi?
+#                     0 - Shart emas (har qanday RDF uchun).
+#                     1 - 5 kishilik guild premadeni cheklash uchun random odam bo'lishi shart.
+#        Default:     0
+
+LfgRoleReward.RequireRandomGroup = 0
+
+#
+#    LfgRoleReward.CheckSpecMatch
+#        Description: O'yinchining talent daraxti ham Tank/Xil ekanligi tekshirilsinmi?
+#                     0 - Faqat LFG dagi roli hisobga olinadi.
+#                     1 - Talent daraxti qat'iy tekshiriladi.
+#        Default:     0
+
+LfgRoleReward.CheckSpecMatch = 0
+
+###################################################################################################
+# 1. HEROIC RDF REWARDS (ПП ГЕР - Level 80 Quests 24788 & 24789)
+###################################################################################################
+
+# TANK HEROIC REWARDS
+LfgRoleReward.Tank.Enable = 1
+LfgRoleReward.Tank.ItemId = 43347
+LfgRoleReward.Tank.ItemCount = 1
+LfgRoleReward.Tank.Money = 250000
+LfgRoleReward.Tank.ExtraEmblemId = 40752
+LfgRoleReward.Tank.ExtraEmblemCount = 1
+
+# HEALER HEROIC REWARDS
+LfgRoleReward.Healer.Enable = 1
+LfgRoleReward.Healer.ItemId = 43347
+LfgRoleReward.Healer.ItemCount = 1
+LfgRoleReward.Healer.Money = 150000
+LfgRoleReward.Healer.ExtraEmblemId = 40752
+LfgRoleReward.Healer.ExtraEmblemCount = 1
+
+###################################################################################################
+# 2. NORMAL RDF REWARDS (ПП ОБЫЧКА - Kamroq Gold bilan)
+###################################################################################################
+
+#
+#    LfgRoleReward.Normal.Enable
+#        Description: ПП обычка uchun ham Tank va Xillarga bonus berilsinmi?
+#        Default:     1
+
+LfgRoleReward.Normal.Enable = 1
+
+#
+#    LfgRoleReward.Normal.Level80Only
+#        Description: Faqat 80-darajali ПП обычка (Quests 24790 & 24791) uchunmi?
+#                     1 - Faqat Level 80 Normal Random Dungeons.
+#                     0 - Barcha darajadagi Random Normal Dungeons (15-80).
+#        Default:     1
+
+LfgRoleReward.Normal.Level80Only = 1
+
+# TANK NORMAL REWARDS (ПП ОБЫЧКА)
+# 12 Gold (120000 copper) - ПП гер (25G) dan kamroq
+LfgRoleReward.Normal.Tank.Enable = 1
+LfgRoleReward.Normal.Tank.ItemId = 43347
+LfgRoleReward.Normal.Tank.ItemCount = 1
+LfgRoleReward.Normal.Tank.Money = 120000
+LfgRoleReward.Normal.Tank.ExtraEmblemId = 40752
+LfgRoleReward.Normal.Tank.ExtraEmblemCount = 1
+
+# HEALER NORMAL REWARDS (ПП ОБЫЧКА)
+# 8 Gold (80000 copper) - ПП гер (15G) dan kamroq
+LfgRoleReward.Normal.Healer.Enable = 1
+LfgRoleReward.Normal.Healer.ItemId = 43347
+LfgRoleReward.Normal.Healer.ItemCount = 1
+LfgRoleReward.Normal.Healer.Money = 80000
+LfgRoleReward.Normal.Healer.ExtraEmblemId = 40752
+LfgRoleReward.Normal.Healer.ExtraEmblemCount = 1
+
+###################################################################################################
+# DPS REWARDS (Disabled by default)
+LfgRoleReward.DPS.Enable = 0
+LfgRoleReward.DPS.ItemId = 0
+LfgRoleReward.DPS.ItemCount = 0
+LfgRoleReward.DPS.Money = 0
+LfgRoleReward.DPS.ExtraEmblemId = 0
+LfgRoleReward.DPS.ExtraEmblemCount = 0
+###################################################################################################

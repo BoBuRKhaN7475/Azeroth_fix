@@ -77,7 +77,7 @@ enum CreatureFlagsExtra : uint32
     CREATURE_FLAG_EXTRA_HARD_RESET                      = 0x80000000,
 
     // Masks
-    CREATURE_FLAG_EXTRA_DB_ALLOWED                      = (0xFFFFFFFF & ~CREATURE_FLAG_EXTRA_DUNGEON_BOSS) // SKIP
+    CREATURE_FLAG_EXTRA_DB_ALLOWED                      = 0xFFFFFFFF
 };
 
 enum class CreatureGroundMovementType : uint8

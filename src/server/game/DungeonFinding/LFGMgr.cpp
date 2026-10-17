@@ -2888,7 +2888,19 @@ namespace lfg
             case LFG_DUNGEON_FROST_LORD_AHUNE:
                 return IsHolidayActive(HOLIDAY_FIRE_FESTIVAL);
             case LFG_DUNGEON_COREN_DIREBREW:
-                return IsHolidayActive(HOLIDAY_BREWFEST);
+            {
+                // Brewfest has a 7-day preparation stage (stage 1) starting Sept 13.
+                // Coren Direbrew should only be available during the main festival (stage 2, event 24) starting Sept 20.
+                GameEventMgr::GameEventDataMap const& events = sGameEventMgr->GetEventMap();
+                for (uint16 eventId : sGameEventMgr->GetActiveEventList())
+                {
+                    if (events[eventId].HolidayId == HOLIDAY_BREWFEST && events[eventId].HolidayStage == 2)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
             case LFG_DUNGEON_CROWN_CHEMICAL_CO:
                 return IsHolidayActive(HOLIDAY_LOVE_IS_IN_THE_AIR);
         }

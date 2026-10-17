@@ -292,12 +292,12 @@ public:
                 }
                 // Begining of intro is differents between factions as the speech sequence and timers are differents.
                 if (me->GetEntry() == NPC_JAINA_PART1)
-                    events.ScheduleEvent(EVENT_INTRO_A2_1, 10s);
+                    events.ScheduleEvent(EVENT_INTRO_A2_1, 2s);
                 else
                 {
-                    events.ScheduleEvent(EVENT_INTRO_H2_2, 9s);
-                    events.ScheduleEvent(EVENT_LORALEN_MOVE_1, 24s);
-                    events.ScheduleEvent(EVENT_LORALEN_MOVE_2, 32s);
+                    events.ScheduleEvent(EVENT_INTRO_H2_2, 2s);
+                    events.ScheduleEvent(EVENT_LORALEN_MOVE_1, 6s);
+                    events.ScheduleEvent(EVENT_LORALEN_MOVE_2, 8s);
                 }
                 break;
 
@@ -310,20 +310,19 @@ public:
                 events.ScheduleEvent(EVENT_INTRO_LK_1, 0ms);
                 break;
 
-                // A2 Intro Events
+                // A2 Intro Events (compressed to finish under 60s total)
             case EVENT_INTRO_A2_1:
                 Talk(SAY_JAINA_INTRO_3);
-                events.ScheduleEvent(EVENT_INTRO_A2_2, 5s);
+                events.ScheduleEvent(EVENT_INTRO_A2_2, 1500ms);
                 break;
             case EVENT_INTRO_A2_2:
                 Talk(SAY_JAINA_INTRO_4);
-                events.ScheduleEvent(EVENT_INTRO_A2_3, 10s);
+                events.ScheduleEvent(EVENT_INTRO_A2_3, 2s);
                 break;
             case EVENT_INTRO_A2_3:
                 instance->HandleGameObject(GO_FROSTMOURNE, true);
                 DoCastSelf(SPELL_FROSTMOURNE_SPAWN_SOUND, true);
-                //DoCastSelf(SPELL_ARCANE_CAST_VISUAL);// the sniff is missing from the alliance
-                events.ScheduleEvent(EVENT_INTRO_A2_4, 10s);
+                events.ScheduleEvent(EVENT_INTRO_A2_4, 2s);
                 break;
             case EVENT_INTRO_A2_4:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -333,68 +332,68 @@ public:
                     if (Aura* a = uther->AddAura(SPELL_SHADOWMOURNE_VISUAL, uther))
                         a->SetDuration(8000);
                 }
-                events.ScheduleEvent(EVENT_INTRO_A2_5, 2s);
+                events.ScheduleEvent(EVENT_INTRO_A2_5, 1s);
                 break;
             case EVENT_INTRO_A2_5:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                 {
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_1);
-                    events.ScheduleEvent(EVENT_INTRO_A2_6, 3s);
+                    events.ScheduleEvent(EVENT_INTRO_A2_6, 1500ms);
                 }
                 break;
             case EVENT_INTRO_A2_6:
                 Talk(SAY_JAINA_INTRO_5);
-                events.ScheduleEvent(EVENT_INTRO_A2_7, 6s);
+                events.ScheduleEvent(EVENT_INTRO_A2_7, 2s);
                 break;
             case EVENT_INTRO_A2_7:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_2);
-                events.ScheduleEvent(EVENT_INTRO_A2_8, 6500ms);
+                events.ScheduleEvent(EVENT_INTRO_A2_8, 2s);
                 break;
             case EVENT_INTRO_A2_8:
                 Talk(SAY_JAINA_INTRO_6);
-                events.ScheduleEvent(EVENT_INTRO_A2_9, 2s);
+                events.ScheduleEvent(EVENT_INTRO_A2_9, 1s);
                 break;
             case EVENT_INTRO_A2_9:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_3);
-                events.ScheduleEvent(EVENT_INTRO_A2_10, 9s);
+                events.ScheduleEvent(EVENT_INTRO_A2_10, 2s);
                 break;
             case EVENT_INTRO_A2_10:
                 Talk(SAY_JAINA_INTRO_7);
-                events.ScheduleEvent(EVENT_INTRO_A2_11, 5s);
+                events.ScheduleEvent(EVENT_INTRO_A2_11, 1500ms);
                 break;
             case EVENT_INTRO_A2_11:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_4);
-                events.ScheduleEvent(EVENT_INTRO_A2_12, 11s);
+                events.ScheduleEvent(EVENT_INTRO_A2_12, 2s);
                 break;
             case EVENT_INTRO_A2_12:
                 Talk(SAY_JAINA_INTRO_8);
-                events.ScheduleEvent(EVENT_INTRO_A2_13, 4s);
+                events.ScheduleEvent(EVENT_INTRO_A2_13, 1500ms);
                 break;
             case EVENT_INTRO_A2_13:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_5);
-                events.ScheduleEvent(EVENT_INTRO_A2_14, 12s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_A2_14, 2500ms);
                 break;
             case EVENT_INTRO_A2_14:
                 Talk(SAY_JAINA_INTRO_9);
-                events.ScheduleEvent(EVENT_INTRO_A2_15, 10s);
+                events.ScheduleEvent(EVENT_INTRO_A2_15, 2s);
                 break;
             case EVENT_INTRO_A2_15:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_6);
-                events.ScheduleEvent(EVENT_INTRO_A2_16, 24s);
+                events.ScheduleEvent(EVENT_INTRO_A2_16, 3s);
                 break;
             case EVENT_INTRO_A2_16:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_7);
-                events.ScheduleEvent(EVENT_INTRO_A2_17, 4s);
+                events.ScheduleEvent(EVENT_INTRO_A2_17, 1500ms);
                 break;
             case EVENT_INTRO_A2_17:
                 Talk(SAY_JAINA_INTRO_10);
-                events.ScheduleEvent(EVENT_INTRO_A2_18, 2s);
+                events.ScheduleEvent(EVENT_INTRO_A2_18, 1s);
                 break;
             case EVENT_INTRO_A2_18:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -402,14 +401,14 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_A2_8);
                 }
-                events.ScheduleEvent(EVENT_INTRO_A2_19, 11s);
+                events.ScheduleEvent(EVENT_INTRO_A2_19, 2s);
                 break;
             case EVENT_INTRO_A2_19:
                 Talk(SAY_JAINA_INTRO_11);
-                events.ScheduleEvent(EVENT_INTRO_LK_1, 2s);
+                events.ScheduleEvent(EVENT_INTRO_LK_1, 1s);
                 break;
 
-                // H2 Intro Events
+                // H2 Intro Events (compressed to finish under 60s total)
             case EVENT_LORALEN_MOVE_1:
                 if (Creature* loralen = instance->GetCreature(NPC_DARK_RANGER_LORALEN))
                     loralen->GetMotionMaster()->MovePoint(0, LoralenFollowPos);
@@ -424,30 +423,31 @@ public:
                 me->SetSheath(SHEATH_STATE_UNARMED);
                 me->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
                 Talk(SAY_SYLVANAS_INTRO_2);
-                events.ScheduleEvent(EVENT_INTRO_H2_2_1, 7s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_H2_2_1, 2s);
                 break;
 
             case EVENT_INTRO_H2_2_1:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                 Talk(SAY_SYLVANAS_INTRO_3);
-                events.ScheduleEvent(EVENT_INTRO_H2_3, 2s);
+                events.ScheduleEvent(EVENT_INTRO_H2_3, 1s);
                 break;
 
             case EVENT_INTRO_H2_3:
                 DoCastSelf(SPELL_SUMMON_SOULS);
-                events.ScheduleEvent(EVENT_INTRO_H2_3_1, 5s);
+                events.ScheduleEvent(EVENT_INTRO_H2_3_1, 1500ms);
                 break;
 
             case EVENT_INTRO_H2_3_1:
                 DoCastSelf(SPELL_FROSTMOURNE_SPAWN_SOUND);
                 instance->HandleGameObject(GO_FROSTMOURNE, true);
-                events.ScheduleEvent(EVENT_INTRO_H2_3_2, 3s);
+                events.ScheduleEvent(EVENT_INTRO_H2_3_2, 1500ms);
                 break;
 
             case EVENT_INTRO_H2_3_2:
                 me->RemoveAurasDueToSpell(SPELL_SUMMON_SOULS);
-                events.ScheduleEvent(EVENT_INTRO_H2_4, 2s);
+                events.ScheduleEvent(EVENT_INTRO_H2_4, 1s);
                 break;
+
             case EVENT_INTRO_H2_4:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
                 {
@@ -455,7 +455,7 @@ public:
                     if (Aura* a = uther->AddAura(SPELL_SHADOWMOURNE_VISUAL, uther))
                         a->SetDuration(8000);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_5, 7s);
+                events.ScheduleEvent(EVENT_INTRO_H2_5, 2s);
                 break;
 
             case EVENT_INTRO_H2_5:
@@ -464,12 +464,12 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_1);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_6, 11s);
+                events.ScheduleEvent(EVENT_INTRO_H2_6, 2s);
                 break;
             case EVENT_INTRO_H2_6:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                 Talk(SAY_SYLVANAS_INTRO_4);
-                events.ScheduleEvent(EVENT_INTRO_H2_7, 2s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_H2_7, 1s);
                 break;
             case EVENT_INTRO_H2_7:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -477,12 +477,12 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_2);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_8, 9s);//
+                events.ScheduleEvent(EVENT_INTRO_H2_8, 2s);
                 break;
             case EVENT_INTRO_H2_8:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                 Talk(SAY_SYLVANAS_INTRO_5);
-                events.ScheduleEvent(EVENT_INTRO_H2_9, 5s);
+                events.ScheduleEvent(EVENT_INTRO_H2_9, 1500ms);
                 break;
             case EVENT_INTRO_H2_9:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -490,12 +490,12 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_3);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_10, 20s);
+                events.ScheduleEvent(EVENT_INTRO_H2_10, 3s);
                 break;
             case EVENT_INTRO_H2_10:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                 Talk(SAY_SYLVANAS_INTRO_6);
-                events.ScheduleEvent(EVENT_INTRO_H2_11, 3s);
+                events.ScheduleEvent(EVENT_INTRO_H2_11, 1s);
                 break;
             case EVENT_INTRO_H2_11:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -503,12 +503,12 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_4);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_12, 21s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_H2_12, 3s);
                 break;
             case EVENT_INTRO_H2_12:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
                 Talk(SAY_SYLVANAS_INTRO_7);
-                events.ScheduleEvent(EVENT_INTRO_H2_13, 3s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_H2_13, 1s);
                 break;
             case EVENT_INTRO_H2_13:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -516,7 +516,7 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_5);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_14, 12s + 500ms);
+                events.ScheduleEvent(EVENT_INTRO_H2_14, 2500ms);
                 break;
             case EVENT_INTRO_H2_14:
                 if (Creature* uther = instance->GetCreature(NPC_UTHER))
@@ -524,24 +524,21 @@ public:
                     uther->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
                     uther->AI()->Talk(SAY_UTHER_INTRO_H2_6);
                 }
-                events.ScheduleEvent(EVENT_INTRO_H2_15, 8s);
+                events.ScheduleEvent(EVENT_INTRO_H2_15, 2s);
                 break;
             case EVENT_INTRO_H2_15:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
                 Talk(SAY_SYLVANAS_INTRO_8);
-                events.ScheduleEvent(EVENT_INTRO_LK_1, 2s);
+                events.ScheduleEvent(EVENT_INTRO_LK_1, 1s);
                 break;
 
                 // Remaining Intro Events common for both faction
             case EVENT_INTRO_LK_1:
                 if (Creature* lichKing = instance->GetCreature(NPC_LICH_KING_EVENT))
                 {
-
                     instance->HandleGameObject(GO_ARTHAS_DOOR, true);
                     lichKing->SetVisible(true);
-
                     lichKing->GetMotionMaster()->MovePoint(0, LichKingMoveMidlelThronePos, FORCED_MOVEMENT_NONE, 0.f, false);
-
                 }
 
                 if (!shortver)
@@ -549,16 +546,14 @@ public:
                     {
                         uther->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
                         if (me->GetEntry() == NPC_JAINA_PART1)
-
                             uther->AI()->Talk(SAY_UTHER_INTRO_A2_9);
                         else
                             uther->AI()->Talk(SAY_UTHER_INTRO_H2_7);
-
                     }
-                events.ScheduleEvent(EVENT_INTRO_LK_1_1, 9s);
-                events.ScheduleEvent(EVENT_INTRO_LK_1_2, 3s);
-                events.ScheduleEvent(EVENT_INTRO_LK_1_3, 6s);
-                events.ScheduleEvent(EVENT_INTRO_LK_2, 12s);
+                events.ScheduleEvent(EVENT_INTRO_LK_1_1, 2500ms);
+                events.ScheduleEvent(EVENT_INTRO_LK_1_2, 1s);
+                events.ScheduleEvent(EVENT_INTRO_LK_1_3, 2s);
+                events.ScheduleEvent(EVENT_INTRO_LK_2, 3500ms);
                 break;
 
             case EVENT_INTRO_LK_1_1:
@@ -589,7 +584,7 @@ public:
                         lichKing->SetVisible(true);
                         lichKing->GetMotionMaster()->MovePoint(0, LichKingMoveThronePos, FORCED_MOVEMENT_NONE, 0.f, false);
                     }
-                events.ScheduleEvent(EVENT_INTRO_LK_2_1, 1s);
+                events.ScheduleEvent(EVENT_INTRO_LK_2_1, 500ms);
                 break;
 
             case EVENT_INTRO_LK_2_1:
@@ -599,14 +594,14 @@ public:
                         uther->SendPlaySpellVisual(SPELL_UTHER_DESPAWN);
                         uther->CastSpell(uther, SPELL_UTHER_DESPAWN, true);
                     }
-                events.ScheduleEvent(EVENT_INTRO_LK_3, 2s);
+                events.ScheduleEvent(EVENT_INTRO_LK_3, 1s);
                 break;
 
             case EVENT_INTRO_LK_3:
                 if (!shortver)
                     if (Creature* uther = instance->GetCreature(NPC_UTHER))
                         uther->SetVisible(false);
-                events.ScheduleEvent(EVENT_INTRO_LK_4, 6s);
+                events.ScheduleEvent(EVENT_INTRO_LK_4, 2s);
                 break;
 
             case EVENT_INTRO_LK_4:
@@ -615,7 +610,7 @@ public:
                     lichKing->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
                     lichKing->AI()->Talk(SAY_LK_INTRO_2);
                 }
-                events.ScheduleEvent(EVENT_INTRO_LK_4_2, 10s);
+                events.ScheduleEvent(EVENT_INTRO_LK_4_2, 3s);
                 break;
 
             case EVENT_INTRO_LK_4_2:
@@ -625,9 +620,9 @@ public:
                     lichKing->SendMovementFlagUpdate();
                     lichKing->CastSpell(lichKing, SPELL_FROSTMOURNE_EQUIP);
                     instance->HandleGameObject(GO_FROSTMOURNE, false);
-                    events.ScheduleEvent(EVENT_INTRO_LK_4_3, 1750ms);
+                    events.ScheduleEvent(EVENT_INTRO_LK_4_3, 1s);
                 }
-                events.ScheduleEvent(EVENT_INTRO_LK_5, 6s);
+                events.ScheduleEvent(EVENT_INTRO_LK_5, 2s);
                 break;
 
             case EVENT_INTRO_LK_4_3:
@@ -660,9 +655,9 @@ public:
                     }
                 }
                 events.ScheduleEvent(EVENT_INTRO_LK_5_1, 0s);
-                events.ScheduleEvent(EVENT_INTRO_LK_5_2, 7s);
+                events.ScheduleEvent(EVENT_INTRO_LK_5_2, 2s);
                 events.ScheduleEvent(EVENT_INTRO_LK_5_3, 0s);
-                events.ScheduleEvent(EVENT_INTRO_LK_6, 11s);
+                events.ScheduleEvent(EVENT_INTRO_LK_6, 3s);
                 break;
 
             case EVENT_INTRO_LK_5_1:
@@ -697,7 +692,7 @@ public:
                     falric->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
                     falric->AI()->Talk(SAY_FALRIC_INTRO_1);
                 }
-                events.ScheduleEvent(EVENT_INTRO_LK_7, 2s);
+                events.ScheduleEvent(EVENT_INTRO_LK_7, 1s);
                 break;
 
             case EVENT_INTRO_LK_7:
@@ -706,7 +701,7 @@ public:
                     marwyn->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
                     marwyn->AI()->Talk(SAY_MARWYN_INTRO_1);
                 }
-                events.ScheduleEvent(EVENT_INTRO_LK_8, 3s);
+                events.ScheduleEvent(EVENT_INTRO_LK_8, 1s);
                 break;
 
             case EVENT_INTRO_LK_8:
@@ -716,7 +711,7 @@ public:
                     instance->SetData(ACTION_SHOW_TRASH, 1);
                     instance->HandleGameObject(GO_ARTHAS_DOOR, true);
                 }
-                events.ScheduleEvent(EVENT_INTRO_LK_9, 6s);
+                events.ScheduleEvent(EVENT_INTRO_LK_9, 2s);
                 break;
 
             case EVENT_INTRO_LK_9:

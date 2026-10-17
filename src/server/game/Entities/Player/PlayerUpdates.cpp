@@ -476,7 +476,7 @@ void Player::UpdateLFGChannel()
         return;
 
     ChatChannelsEntry const* cce = sChatChannelsStore.LookupEntry(26); /*LookingForGroup*/
-    Channel* cLFG = cMgr->GetJoinChannel(cce->pattern[m_session->GetSessionDbcLocale()], cce->ChannelID);
+    Channel* cLFG = cMgr->GetJoinChannel(GetChannelPattern(cce), cce->ChannelID);
     if (!cLFG)
         return;
 
@@ -563,7 +563,7 @@ void Player::UpdateLocalChannels(uint32 newZone)
                         currentNameExt = current_zone_name;
 
                     snprintf(new_channel_name_buf, 100,
-                             channel->pattern[m_session->GetSessionDbcLocale()],
+                             GetChannelPattern(channel),
                              currentNameExt.c_str());
 
                     joinChannel = cMgr->GetJoinChannel(new_channel_name_buf,
@@ -582,7 +582,7 @@ void Player::UpdateLocalChannels(uint32 newZone)
                 }
                 else
                     joinChannel = cMgr->GetJoinChannel(
-                        channel->pattern[m_session->GetSessionDbcLocale()],
+                        GetChannelPattern(channel),
                         channel->ChannelID);
             }
             else

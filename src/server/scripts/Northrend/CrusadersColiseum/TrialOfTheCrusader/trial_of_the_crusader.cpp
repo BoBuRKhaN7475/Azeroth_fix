@@ -20,6 +20,7 @@
 #include "Player.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "UnitScript.h"
 
 enum MenuTexts
 {
@@ -90,7 +91,63 @@ public:
     }
 };
 
+class trial_of_the_crusader_damage_scaling : public UnitScript
+{
+public:
+    trial_of_the_crusader_damage_scaling() : UnitScript("trial_of_the_crusader_damage_scaling", true, { UNITHOOK_MODIFY_HEAL_RECEIVED }) { }
+
+    uint32 DealDamage(Unit* attacker, Unit* victim, uint32 damage, DamageEffectType /*damagetype*/) override
+    {
+        if (!attacker || !victim || damage == 0)
+            return damage;
+
+        if (attacker->GetMapId() != MAP_TRIAL_OF_THE_CRUSADER)
+            return damage;
+
+        if (!attacker->IsCreature() || (!victim->IsPlayer() && !victim->IsPet() && !victim->IsGuardian() && !victim->IsTotem()))
+            return damage;
+
+        if (!attacker->ToCreature()->IsHostileToPlayers())
+            return damage;
+
+        Map* map = attacker->GetMap();
+        if (!map)
+            return damage;
+
+        Difficulty diff = map->GetDifficulty();
+        if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
+            return uint32(damage * 1.20f);
+        else if (diff == RAID_DIFFICULTY_25MAN_NORMAL)
+            return uint32(damage * 1.25f);
+
+        return damage;
+    }
+
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* /*spellInfo*/) override
+    {
+        if (!healer || !target || heal == 0)
+            return;
+
+        if (healer->GetMapId() != MAP_TRIAL_OF_THE_CRUSADER)
+            return;
+
+        if (!healer->IsCreature() || !healer->ToCreature()->IsHostileToPlayers())
+            return;
+
+        Map* map = healer->GetMap();
+        if (!map)
+            return;
+
+        Difficulty diff = map->GetDifficulty();
+        if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
+            heal = uint32(heal * 1.20f);
+        else if (diff == RAID_DIFFICULTY_25MAN_NORMAL)
+            heal = uint32(heal * 1.25f);
+    }
+};
+
 void AddSC_trial_of_the_crusader()
 {
     new npc_announcer_toc10();
+    new trial_of_the_crusader_damage_scaling();
 }

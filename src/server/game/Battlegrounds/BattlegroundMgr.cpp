@@ -96,6 +96,32 @@ void BattlegroundMgr::DeleteAllBattlegrounds()
     bgDataStore.clear();
 }
 
+static Seconds GetNextArenaDistributionTime()
+{
+    time_t now = GameTime::GetGameTime().count();
+    tm localTm;
+    localtime_r(&now, &localTm);
+
+    // Target: Sunday (wday == 0) at 15:00:00
+    int daysUntilSunday = (7 - localTm.tm_wday) % 7;
+    if (daysUntilSunday == 0)
+    {
+        if (localTm.tm_hour > 15 || (localTm.tm_hour == 15 && (localTm.tm_min > 0 || localTm.tm_sec > 0)))
+        {
+            daysUntilSunday = 7;
+        }
+    }
+
+    localTm.tm_mday += daysUntilSunday;
+    localTm.tm_hour = 15;
+    localTm.tm_min = 0;
+    localTm.tm_sec = 0;
+    localTm.tm_isdst = -1;
+
+    time_t targetTime = mktime(&localTm);
+    return Seconds(targetTime);
+}
+
 // used to update running battlegrounds, and delete finished ones
 void BattlegroundMgr::Update(uint32 diff)
 {
@@ -183,7 +209,7 @@ void BattlegroundMgr::Update(uint32 diff)
             if (GameTime::GetGameTime() > m_NextAutoDistributionTime)
             {
                 sArenaTeamMgr->DistributeArenaPoints();
-                m_NextAutoDistributionTime = GameTime::GetGameTime() + Seconds(DAY * sWorld->getIntConfig(CONFIG_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS));
+                m_NextAutoDistributionTime = GetNextArenaDistributionTime();
                 sWorldState->setWorldState(WORLD_STATE_CUSTOM_ARENA_DISTRIBUTION_TIME, m_NextAutoDistributionTime.count());
             }
             m_AutoDistributionTimeChecker = 600000; // 10 minutes check
@@ -446,7 +472,19 @@ bool BattlegroundMgr::CreateBattleground(BattlegroundTemplate const* bgTemplate)
     }
 
     bg->SetMapId(bgTemplate->BattlemasterEntry->mapid[0]);
-    bg->SetName(bgTemplate->BattlemasterEntry->name[sWorld->GetDefaultDbcLocale()]);
+    std::string bgName = bgTemplate->BattlemasterEntry->name[sWorld->GetDefaultDbcLocale()];
+    switch (bgTemplate->Id)
+    {
+        case BATTLEGROUND_AV: bgName = "Альтеракская Долина"; break;
+        case BATTLEGROUND_WS: bgName = "Ущелье Песни Войны"; break;
+        case BATTLEGROUND_AB: bgName = "Низина Арати"; break;
+        case BATTLEGROUND_EY: bgName = "Око Бури"; break;
+        case BATTLEGROUND_SA: bgName = "Берег Древних"; break;
+        case BATTLEGROUND_IC: bgName = "Остров Завоеваний"; break;
+        case BATTLEGROUND_RB: bgName = "Случайное поле боя"; break;
+        default: break;
+    }
+    bg->SetName(bgName);
     bg->SetArenaorBGType(bgTemplate->IsArena());
     bg->SetMinPlayersPerTeam(bgTemplate->MinPlayersPerTeam);
     bg->SetMaxPlayersPerTeam(bgTemplate->MaxPlayersPerTeam);
@@ -568,7 +606,12 @@ void BattlegroundMgr::InitAutomaticArenaPointDistribution()
 
     LOG_INFO("server.loading", "Initializing Automatic Arena Point Distribution");
 
-    if (wstime < curtime)
+    if (wstime == Seconds(0))
+    {
+        m_NextAutoDistributionTime = GetNextArenaDistributionTime();
+        sWorldState->setWorldState(WORLD_STATE_CUSTOM_ARENA_DISTRIBUTION_TIME, m_NextAutoDistributionTime.count());
+    }
+    else if (wstime < curtime)
     {
         m_NextAutoDistributionTime = curtime; // reset will be called in the next update
         LOG_INFO("server.loading", "Next arena point distribution time in the past, reseting it now.");

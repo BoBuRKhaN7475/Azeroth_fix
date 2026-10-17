@@ -45,6 +45,10 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
     player->duel->State = DUEL_STATE_COUNTDOWN;
     target->duel->State = DUEL_STATE_COUNTDOWN;
 
+    // Reset cooldowns, runes, and health/powers when duel is accepted
+    player->ResetDuelCombatState();
+    target->ResetDuelCombatState();
+
     player->SendDuelCountdown(3000);
     target->SendDuelCountdown(3000);
 }

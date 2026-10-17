@@ -124,11 +124,15 @@ Channel* ChannelMgr::GetJoinChannel(std::string const& name, uint32 channelId)
     Utf8toWStr(name, wname);
     wstrToLower(wname);
 
+    if (wname == L"поиск спутников" || wname == L"lookingforgroup")
+        wname = L"поискспутников";
+
     ChannelMap::const_iterator i = channels.find(wname);
 
     if (i == channels.end())
     {
-        Channel* nchan = new Channel(name, channelId, 0, _teamId);
+        std::string const& actualName = (wname == L"поискспутников") ? "Поискспутников" : name;
+        Channel* nchan = new Channel(actualName, channelId, 0, _teamId);
         channels[wname] = nchan;
         return nchan;
     }
@@ -141,6 +145,9 @@ Channel* ChannelMgr::GetChannel(std::string const& name, Player* player, bool pk
     std::wstring wname;
     Utf8toWStr(name, wname);
     wstrToLower(wname);
+
+    if (wname == L"поиск спутников" || wname == L"lookingforgroup")
+        wname = L"поискспутников";
 
     ChannelMap::const_iterator i = channels.find(wname);
 

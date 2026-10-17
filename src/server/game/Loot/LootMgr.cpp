@@ -16,6 +16,7 @@
  */
 
 #include "LootMgr.h"
+#include "CharacterCache.h"
 #include "Containers.h"
 #include "DisableMgr.h"
 #include "Group.h"
@@ -423,15 +424,42 @@ bool LootItem::AllowedForPlayer(Player const* player, ObjectGuid source) const
     if (sDisableMgr->IsDisabledFor(DISABLE_TYPE_LOOT, itemid, nullptr))
         return false;
 
-    if (!sConditionMgr->IsObjectMeetToConditions(const_cast<Player*>(player), conditions))
-        return false;
+    bool isCrossFactionRaid = false;
+    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP))
+    {
+        if (Group const* grp = player->GetGroup())
+            if (grp->isRaidGroup())
+                isCrossFactionRaid = true;
+    }
 
-    // not show loot for not own team
-    if (pProto->HasFlag2(ITEM_FLAG2_FACTION_HORDE) && player->GetTeamId(true) != TEAM_HORDE)
-        return false;
+    bool isFactionItem = pProto->HasFlag2(ITEM_FLAG2_FACTION_HORDE) || pProto->HasFlag2(ITEM_FLAG2_FACTION_ALLIANCE);
 
-    if (pProto->HasFlag2(ITEM_FLAG2_FACTION_ALLIANCE) && player->GetTeamId(true) != TEAM_ALLIANCE)
-        return false;
+    if (!isCrossFactionRaid || !isFactionItem)
+    {
+        if (!sConditionMgr->IsObjectMeetToConditions(const_cast<Player*>(player), conditions))
+            return false;
+
+        // not show loot for not own team
+        if (pProto->HasFlag2(ITEM_FLAG2_FACTION_HORDE) && player->GetTeamId(true) != TEAM_HORDE)
+            return false;
+
+        if (pProto->HasFlag2(ITEM_FLAG2_FACTION_ALLIANCE) && player->GetTeamId(true) != TEAM_ALLIANCE)
+            return false;
+    }
+    else
+    {
+        // In cross-faction raid for faction items, evaluate non-team conditions
+        for (Condition const* cond : conditions)
+        {
+            if (cond->ConditionType != CONDITION_TEAM)
+            {
+                ConditionList singleCond;
+                singleCond.push_back(const_cast<Condition*>(cond));
+                if (!sConditionMgr->IsObjectMeetToConditions(const_cast<Player*>(player), singleCond))
+                    return false;
+            }
+        }
+    }
 
     // profession / recipe checks
     if (pProto->HasFlag(ITEM_FLAG_HIDE_UNUSABLE_RECIPE) && (!player->HasSkill(pProto->RequiredSkill) || player->HasSpell(pProto->Spells[1].SpellId)))
@@ -560,10 +588,78 @@ bool Loot::FillLoot(uint32 lootId, LootStore const& store, Player* lootOwner, bo
     // Initial group is 0, top level set to True
     tab->Process(*this, store, lootMode, lootOwner, 0, true);          // Processing is done there, callback via Loot::AddItem()
 
+    // Task 19 - Phase 2D: Strict ToC/ToGC (Map 649) & ToCh (Map 650) Raid Leader Faction Override
+    uint32 mapId = lootSource ? lootSource->GetMapId() : (lootOwner ? lootOwner->GetMapId() : 0);
+    Group* group = lootOwner->GetGroup();
+    if (mapId == 649 || mapId == 650)
+    {
+        TeamId leaderTeam = TEAM_ALLIANCE;
+        if (group)
+        {
+            ObjectGuid leaderGuid = group->GetLeaderGUID();
+            leaderTeam = leaderGuid ? TeamId(sCharacterCache->GetCharacterTeamByGuid(leaderGuid)) : lootOwner->GetTeamId();
+        }
+        else
+        {
+            leaderTeam = lootOwner->GetTeamId();
+        }
+
+        // Keep only the leader's faction items for faction-specific loot
+        auto it = items.begin();
+        while (it != items.end())
+        {
+            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(it->itemid);
+            if (!proto)
+            {
+                ++it;
+                continue;
+            }
+
+            bool remove = false;
+            // If leader is Horde, eliminate Alliance-specific items
+            if (leaderTeam == TEAM_HORDE)
+            {
+                if (proto->HasFlag2(ITEM_FLAG2_FACTION_ALLIANCE))
+                    remove = true;
+
+                for (Condition const* cond : it->conditions)
+                    if (cond->ConditionType == CONDITION_TEAM && cond->ConditionValue1 == 469 /*ALLIANCE*/)
+                        remove = true;
+            }
+            // If leader is Alliance, eliminate Horde-specific items
+            else if (leaderTeam == TEAM_ALLIANCE)
+            {
+                if (proto->HasFlag2(ITEM_FLAG2_FACTION_HORDE))
+                    remove = true;
+
+                for (Condition const* cond : it->conditions)
+                    if (cond->ConditionType == CONDITION_TEAM && cond->ConditionValue1 == 67 /*HORDE*/)
+                        remove = true;
+            }
+
+            if (remove)
+            {
+                if (!it->needs_quest && it->conditions.empty() && !proto->HasFlag(ITEM_FLAG_MULTI_DROP))
+                {
+                    if (unlootedCount > 0)
+                        --unlootedCount;
+                }
+                it = items.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Re-index remaining items
+        for (uint8 i = 0; i < items.size(); ++i)
+            items[i].itemIndex = i;
+    }
+
     sScriptMgr->OnAfterLootTemplateProcess(this, tab, store, lootOwner, personal, noEmptyError, lootMode);
 
     // Setting access rights for group loot case
-    Group* group = lootOwner->GetGroup();
     if (!personal && group)
     {
         roundRobinPlayer = lootOwner->GetGUID();

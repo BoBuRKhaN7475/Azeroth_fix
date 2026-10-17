@@ -16,11 +16,15 @@
  */
 
 // This is where scripts' loading functions should be declared:
-// void MyExampleScript()
+void AddSC_custom_server_fixes();
+void AddSC_custom_faction_item_converter();
+void AddSC_custom_fast_start();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
 void AddCustomScripts()
 {
-    // MyExampleScript()
+    AddSC_custom_server_fixes();
+    AddSC_custom_faction_item_converter();
+    AddSC_custom_fast_start();
 }

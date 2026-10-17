@@ -5252,10 +5252,6 @@ void ObjectMgr::LoadQuests()
     // Post processing
     for (QuestMap::iterator iter = _questTemplates.begin(); iter != _questTemplates.end(); ++iter)
     {
-        // skip post-loading checks for disabled quests
-        if (sDisableMgr->IsDisabledFor(DISABLE_TYPE_QUEST, iter->first, nullptr))
-            continue;
-
         Quest* qinfo = iter->second;
 
         // additional quest integrity checks (GO, creature_template and item_template must be loaded already)
@@ -9546,7 +9542,8 @@ std::string const* ObjectMgr::GetModuleString(std::string module, uint32 id, Loc
 
     LOG_ERROR("sql.sql", "Module string module {} id {} not found in DB.", module, id);
 
-    return (std::string*)"error";
+    static std::string const emptyModuleString;
+    return &emptyModuleString;
 }
 
 bool ObjectMgr::LoadAcoreStrings()

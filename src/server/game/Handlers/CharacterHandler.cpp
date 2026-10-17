@@ -924,7 +924,8 @@ void WorldSession::HandlePlayerLoginFromDB(LoginQueryHolder const& holder)
         pCurrChar->GetSession()->SendNameQueryOpcode(pCurrChar->GetGUID());
     }
 
-    pCurrChar->SendInitialPacketsAfterAddToMap();
+    if (!pCurrChar->IsBeingTeleportedFar())
+        pCurrChar->SendInitialPacketsAfterAddToMap();
 
     if (!sToCloud9Sidecar->ClusterModeEnabled())
     {

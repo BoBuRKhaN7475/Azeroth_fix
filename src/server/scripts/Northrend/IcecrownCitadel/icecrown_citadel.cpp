@@ -1070,6 +1070,8 @@ public:
             if (!me->isDead())
                 Reset();
             me->SetReactState(REACT_PASSIVE);
+            me->SetDisableGravity(true);
+            me->SetAnimTier(AnimTier::Hover);
         }
 
         void Reset() override
@@ -1077,18 +1079,23 @@ public:
             _Reset();
             me->SetReactState(REACT_DEFENSIVE);
             _isEventInProgress = false;
+            me->SetDisableGravity(true);
+            me->SetAnimTier(AnimTier::Hover);
         }
 
         void JustReachedHome() override
         {
             _JustReachedHome();
             me->SetReactState(REACT_PASSIVE);
-            me->SetDisableGravity(false);
+            me->SetDisableGravity(true);
+            me->SetAnimTier(AnimTier::Hover);
         }
 
         void JustDied(Unit* /*killer*/) override
         {
             _JustDied();
+            me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
             Talk(SAY_SVALNA_DEATH);
 
             if (Creature* crok = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_CROK_SCOURGEBANE))) // _isEventDone = true, setActive(false)
@@ -1246,6 +1253,8 @@ public:
                     case EVENT_SVALNA_COMBAT:
                         me->SetReactState(REACT_DEFENSIVE);
                         Talk(SAY_SVALNA_AGGRO);
+                        me->SetDisableGravity(false);
+                        me->SetAnimTier(AnimTier::Ground);
                         break;
                     case EVENT_IMPALING_SPEAR:
                         if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 0.0f, true, false, -SPELL_IMPALING_SPEAR))
@@ -3690,6 +3699,7 @@ struct npc_icc_spire_frostwyrm : public ScriptedAI
         {
             me->SetCanFly(false);
             me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
             me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
         }
@@ -3722,7 +3732,10 @@ struct npc_icc_spire_frostwyrm : public ScriptedAI
         bool hordeSide = action == HORDE_AREATRIGGER || action == HORDE_AREATRIGGER + 1;
         Position landingPosition = hordeSide ? posHordeMove : posAllianceMove;
 
-        me->GetMotionMaster()->MovePoint(1, landingPosition);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->SetAnimTier(AnimTier::Fly);
+        me->GetMotionMaster()->MovePoint(1, landingPosition, FORCED_MOVEMENT_NONE, 0.0f, false, true, AnimTier::Fly);
         me->SetHomePosition(landingPosition);
 
         Talk(0);
@@ -3730,10 +3743,11 @@ struct npc_icc_spire_frostwyrm : public ScriptedAI
 
     void MovementInform(uint32 type, uint32 id) override
     {
-        if (type == EFFECT_MOTION_TYPE && id == 1)
+        if ((type == POINT_MOTION_TYPE || type == EFFECT_MOTION_TYPE) && id == 1)
         {
             me->SetCanFly(false);
             me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
             me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
             _canResetFlyingEffects = false;
         }
@@ -3746,6 +3760,7 @@ struct npc_icc_spire_frostwyrm : public ScriptedAI
         {
             me->SetCanFly(false);
             me->SetDisableGravity(false);
+            me->SetAnimTier(AnimTier::Ground);
             me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
         }
     }

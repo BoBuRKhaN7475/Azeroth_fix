@@ -2439,7 +2439,12 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
     if (proto->HasFlag2(ITEM_FLAG2_EVERYONE_CAN_ROLL_NEED))
         return EQUIP_ERR_OK;
 
-    if ((proto->AllowableClass & getClassMask()) == 0 || (proto->AllowableRace & getRaceMask()) == 0)
+    if (proto->HasFlag2(ITEM_FLAG2_FACTION_HORDE) || proto->HasFlag2(ITEM_FLAG2_FACTION_ALLIANCE))
+    {
+        if ((proto->AllowableClass & getClassMask()) == 0)
+            return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
+    }
+    else if ((proto->AllowableClass & getClassMask()) == 0 || (proto->AllowableRace & getRaceMask()) == 0)
         return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
 
     if (proto->RequiredSpell != 0 && !HasSpell(proto->RequiredSpell))

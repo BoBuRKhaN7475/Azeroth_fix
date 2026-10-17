@@ -18,12 +18,18 @@ struct PWConfig
     static inline bool Enable = true;
     static inline bool GMBypass = true;
     static inline bool AnnouncePhaseChange = true;
+    static inline bool EnableBgMarks = true;
+    static inline uint8 BgMarksMaxPhase = 0;
+    static inline bool DisableStrandOfTheAncients = true;
 
     static void Load(bool /*reload*/ = false)
     {
         Enable = sConfigMgr->GetOption<bool>("ProgressiveWotlk.Enable", true, false);
         GMBypass = sConfigMgr->GetOption<bool>("ProgressiveWotlk.GMBypass", true, false);
         AnnouncePhaseChange = sConfigMgr->GetOption<bool>("ProgressiveWotlk.AnnouncePhaseChange", true, false);
+        EnableBgMarks = sConfigMgr->GetOption<bool>("ProgressiveWotlk.EnableBgMarks", true, false);
+        BgMarksMaxPhase = sConfigMgr->GetOption<uint8>("ProgressiveWotlk.BgMarksMaxPhase", 0, false);
+        DisableStrandOfTheAncients = sConfigMgr->GetOption<bool>("ProgressiveWotlk.DisableStrandOfTheAncients", true, false);
     }
 };
 
@@ -123,6 +129,12 @@ static const PhaseCreatureEntry PHASE_CREATURE_TABLE[] =
     { 3, 35013, "Koralon the Flame Watcher (10-man)"               },
     { 3, 35360, "Koralon the Flame Watcher (25-man)"               },
 
+    // Dalaran T9/T10 Armor Merchants (Patch 3.2+)
+    { 3, 35496, "Rueben Lauren (Cloth Armor Merchant)"            },
+    { 3, 35497, "Rafael Langrom (Leather Armor Merchant)"         },
+    { 3, 35498, "Horace Hunderland (Plate Armor Merchant)"        },
+    { 3, 35500, "Matilda Brightlink (Mail Armor Merchant)"        },
+
     // Dalaran Sewers (Kloaka) A7 Relentless Arena Armor Vendors
     { 3, 33924, "Argex Irongut (A7 Relentless Veteran Vendor)"       },
     { 3, 33927, "Nargle Lashcord (A7 Relentless Veteran Vendor)"     },
@@ -178,7 +190,7 @@ void        PW_ApplyPhaseDisables(uint8 currentPhase);
 void        PW_ApplyPhaseQuestRewards(uint8 currentPhase);
 void        PW_ApplyPhaseLoot(uint8 currentPhase);
 void        PW_ApplyPhaseArenaSeason(uint8 currentPhase);
-void        PW_ApplyPhaseEpicGems(uint8 currentPhase);
+void        PW_ApplyPhaseVendors(uint8 currentPhase);
 bool        PW_SetPhase(uint8 newPhase, std::string& outMessage);
 std::string PW_GetStatusText(uint8 currentPhase);
 

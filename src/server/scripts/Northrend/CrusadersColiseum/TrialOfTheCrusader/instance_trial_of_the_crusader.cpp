@@ -954,6 +954,7 @@ public:
                     }
                 case EVENT_SCENE_201:
                     {
+                        UpdateTeamIdFromLeader();
                         // move Jaraxxus to side, can't remove corpse because of loot!
                         if (Creature* jaraxxus = instance->GetCreature(NPC_JaraxxusGUID))
                         {
@@ -1374,8 +1375,39 @@ public:
             }
         }
 
+        void UpdateTeamIdFromLeader()
+        {
+            if (!sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP))
+                return;
+
+            Map::PlayerList const& pl = instance->GetPlayers();
+            for (Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr)
+            {
+                if (Player* plr = itr->GetSource())
+                {
+                    if (Group* group = plr->GetGroup())
+                    {
+                        ObjectGuid leaderGuid = group->GetLeaderGUID();
+                        if (leaderGuid)
+                        {
+                            TeamId leaderTeam = TeamId(sCharacterCache->GetCharacterTeamByGuid(leaderGuid));
+                            if (leaderTeam != TEAM_NEUTRAL && leaderTeam != GetTeamIdInInstance())
+                            {
+                                SetTeamIdInInstance(leaderTeam);
+                                for (Map::PlayerList::const_iterator pItr = pl.begin(); pItr != pl.end(); ++pItr)
+                                    if (Player* p = pItr->GetSource())
+                                        p->SetFaction((leaderTeam == TEAM_HORDE) ? 1610 : 1);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         void OnPlayerEnter(Player* plr) override
         {
+            UpdateTeamIdFromLeader();
             InstanceScript::OnPlayerEnter(plr);
 
             if (instance->IsHeroic())

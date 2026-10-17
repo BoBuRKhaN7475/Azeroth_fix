@@ -196,7 +196,7 @@ void Channel::JoinChannel(Player* player, std::string const& pass)
 
     player->JoinedChannel(this);
 
-    if (_announce && ShouldAnnouncePlayer(player))
+    if (!IsLFG() && _announce && ShouldAnnouncePlayer(player))
     {
         WorldPacket data;
         MakeJoined(&data, guid);
@@ -273,7 +273,7 @@ void Channel::LeaveChannel(Player* player, bool send)
     bool changeowner = playersStore[guid].IsOwner();
 
     playersStore.erase(guid);
-    if (_announce && ShouldAnnouncePlayer(player))
+    if (!IsLFG() && _announce && ShouldAnnouncePlayer(player))
     {
         WorldPacket data;
         MakeLeft(&data, guid);
@@ -772,7 +772,7 @@ void Channel::Say(ObjectGuid guid, std::string const& what, uint32 lang)
     if (what.empty())
         return;
 
-    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
+    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL) || IsLFG())
         lang = LANG_UNIVERSAL;
 
     if (!IsOn(guid))

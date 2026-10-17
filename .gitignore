@@ -11,6 +11,11 @@
 !/modules/CMakeLists.txt
 !/modules/*.h
 !/modules/*.cmake
+!/modules/mod-anticheat/
+!/modules/mod-cfbg/
+!/modules/mod-lfg-role-reward/
+!/modules/mod-progressive-wotlk/
+!/modules/mod-transmog/
 /build*/
 /var/*
 !/var/build/.gitkeep
@@ -132,3 +137,16 @@ e2e/local/**
 !e2e/local/README.md
 e2e/go.work
 e2e/go.work.sum
+
+# Custom scripts & SQL
+!/src/server/scripts/Custom/*.cpp
+!/src/server/scripts/Custom/*.h
+!/data/sql/custom/**
+
+# Custom modules
+!/modules/mod-anticheat/**
+!/modules/mod-cfbg/**
+!/modules/mod-lfg-role-reward/**
+!/modules/mod-progressive-wotlk/**
+!/modules/mod-transmog/**
+

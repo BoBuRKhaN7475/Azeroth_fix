@@ -2303,6 +2303,18 @@ void SpellMgr::LoadSpellInfoCorrections()
         spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(85); // summon for 18 seconds, 15 not enough
     });
 
+    // Trial of the Crusader, Jaraxxus, Infernal Volcano periodic aura
+    ApplySpellFix({ 66252, 67067 }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->AttributesEx5 |= SPELL_ATTR5_EXTRA_INITIAL_PERIOD;
+    });
+
+    // Trial of the Crusader, Jaraxxus, Volcano Infernal missile
+    ApplySpellFix({ 66253 }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->AttributesEx2 |= SPELL_ATTR2_IGNORE_LINE_OF_SIGHT;
+    });
+
     // Trial of the Crusader, Jaraxxus, Spinning Pain Spike
     ApplySpellFix({ 66281 }, [](SpellInfo* spellInfo)
     {

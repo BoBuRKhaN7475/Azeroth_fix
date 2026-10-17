@@ -27,3 +27,31 @@ ProgressiveWotlk.GMBypass = 1
 #       Default: 1
 #
 ProgressiveWotlk.AnnouncePhaseChange = 1
+
+#
+#   ProgressiveWotlk.EnableBgMarks
+#       Battleground (Warsong Gulch, Arathi Basin, Alterac Valley va h.k.) yakunlanganda
+#       o'yinchilarga «Почетный знак» (Mark of Honor) berilsinmi?
+#       G'olibga: 3 ta, Mag'lub/Durangga: 1 ta.
+#       Agar sumkada bo'sh joy bo'lmasa, avtomatik pochtaga (mailbox) yuboriladi.
+#       Default: 1 (yoqilgan)
+#
+ProgressiveWotlk.EnableBgMarks = 1
+
+#
+#   ProgressiveWotlk.BgMarksMaxPhase
+#       Nechanchi fazagacha znaklar berilsin?
+#       0 = Barcha fazalarda beriladi
+#       3 = Faqat 1-3 fazalarda beriladi (Patch 3.3.3 kabi 4-faza ICC da avtomatik to'xtaydi)
+#       Default: 0
+#
+ProgressiveWotlk.BgMarksMaxPhase = 0
+
+#
+#   ProgressiveWotlk.DisableStrandOfTheAncients
+#       Strand of the Ancients (Берег Древних, BG ID: 9, Map ID: 607) ni bloklash/yopish.
+#       1 = Yopilgan (o'yinchilar kira olmaydi, navbatga turolmaydi)
+#       0 = Ochiq
+#       Default: 1 (yopilgan)
+#
+ProgressiveWotlk.DisableStrandOfTheAncients = 1

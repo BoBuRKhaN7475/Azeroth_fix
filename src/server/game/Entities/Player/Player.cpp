@@ -3746,6 +3746,38 @@ void Player::RemoveAllSpellCooldown()
     }
 }
 
+void Player::ResetDuelCombatState()
+{
+    if (GetMap()->IsBattlegroundOrArena())
+        return;
+
+    ClearComboPoints();
+    RemoveArenaSpellCooldowns(true);
+    RemoveAllSpellCooldown();
+
+    if (getClass() == CLASS_DEATH_KNIGHT)
+    {
+        for (uint8 i = 0; i < 6; ++i)
+            SetRuneCooldown(i, 0);
+        ResyncRunes(6);
+    }
+
+    ResetAllPowers();
+
+    if (Pet* pet = GetPet())
+    {
+        pet->SetHealth(pet->GetMaxHealth());
+        if (pet->getPowerType() == POWER_FOCUS)
+            pet->SetPower(POWER_FOCUS, pet->GetMaxPower(POWER_FOCUS));
+        else if (pet->getPowerType() == POWER_MANA)
+            pet->SetPower(POWER_MANA, pet->GetMaxPower(POWER_MANA));
+
+        for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
+            SendClearCooldown(itr->first, pet);
+        pet->m_CreatureSpellCooldowns.clear();
+    }
+}
+
 void Player::_LoadSpellCooldowns(PreparedQueryResult result)
 {
     // some cooldowns can be already set at aura loading...
@@ -5064,6 +5096,32 @@ bool Player::CanJoinConstantChannelInZone(ChatChannelsEntry const* channel, Area
         return false;
 
     return true;
+}
+
+char const* Player::GetChannelPattern(ChatChannelsEntry const* channel) const
+{
+    if (!channel)
+        return "";
+
+    char const* pattern = channel->pattern[m_session->GetSessionDbcLocale()];
+    if (pattern && *pattern)
+        return pattern;
+
+    if (m_session->GetSessionDbcLocale() == LOCALE_ruRU)
+    {
+        switch (channel->ChannelID)
+        {
+            case 1:  return "Общий - %s";
+            case 2:  return "Торговля - %s";
+            case 22: return "Оборона: локальный - %s";
+            case 23: return "Оборона: всемирный";
+            case 25: return "Поиск гильдии - %s";
+            case 26: return "Поискспутников";
+            default: break;
+        }
+    }
+
+    return (channel->pattern[DEFAULT_LOCALE] && *channel->pattern[DEFAULT_LOCALE]) ? channel->pattern[DEFAULT_LOCALE] : "";
 }
 
 void Player::JoinedChannel(Channel* c)
@@ -6719,6 +6777,12 @@ void Player::DuelComplete(DuelCompleteType type)
     {
         duel->Opponent->ClearComboPoints();
     }
+
+    // Reset duel cooldowns and restore health/powers
+    ResetDuelCombatState();
+    opponent->ResetDuelCombatState();
+    CombatStopWithPets(true);
+    opponent->CombatStopWithPets(true);
 
     //cleanups
     SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid::Empty);
@@ -11928,6 +11992,8 @@ void Player::SendInitialPacketsAfterAddToMap()
             if (Group* group = GetGroup())
                 group->SendPendingRollsToPlayer(this, map);
 
+    // Ensure the client has its own name data cached to prevent "Unknown" / "Неизвестно" display bugs
+    GetSession()->SendNameQueryOpcode(GetGUID());
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()

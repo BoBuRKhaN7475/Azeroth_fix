@@ -493,12 +493,41 @@ public:
     }
 };
 
+enum HyldsmeetProtoDrake
+{
+    SPELL_HYLDNIR_HARPOON    = 54933,
+    NPC_HYLDSMEET_DRAKERIDER = 29694,
+    NPC_DRAKERIDER_CREDIT    = 29800
+};
+
 struct npc_hyldsmeet_protodrake : public CreatureAI
 {
     explicit npc_hyldsmeet_protodrake(Creature* creature) : CreatureAI(creature), _accessoryInstalled(false), _accessoryRespawnTimer(0)
     {
         me->SetUnitFlag2(UNIT_FLAG2_PREVENT_SPELL_CLICK);
-     }
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spellInfo) override
+    {
+        if (spellInfo->Id == SPELL_HYLDNIR_HARPOON)
+        {
+            if (Player* player = caster->ToPlayer())
+            {
+                player->KilledMonsterCredit(NPC_DRAKERIDER_CREDIT);
+
+                if (Vehicle* vehicleKit = me->GetVehicleKit())
+                {
+                    if (Unit* passenger = vehicleKit->GetPassenger(1))
+                    {
+                        if (passenger->GetEntry() == NPC_HYLDSMEET_DRAKERIDER)
+                        {
+                            Unit::Kill(player, passenger);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     void PassengerBoarded(Unit* who, int8 /*seat*/, bool apply) override
     {

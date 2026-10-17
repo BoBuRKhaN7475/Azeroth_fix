@@ -162,6 +162,7 @@ public:
             { "spell_loot_template",           HandleReloadLootTemplatesSpellCommand,         rbac::RBAC_PERM_COMMAND_RELOAD_SPELL_LOOT_TEMPLATE, Console::Yes },
             { "spell_linked_spell",            HandleReloadSpellLinkedSpellCommand,           rbac::RBAC_PERM_COMMAND_RELOAD_SPELL_LINKED_SPELL, Console::Yes },
             { "spell_pet_auras",               HandleReloadSpellPetAurasCommand,              rbac::RBAC_PERM_COMMAND_RELOAD_SPELL_PET_AURAS, Console::Yes },
+            { "pet_levelstats",                HandleReloadPetLevelStatsCommand,              rbac::RBAC_PERM_COMMAND_RELOAD, Console::Yes },
             { "spell_proc",                    HandleReloadSpellProcsCommand,                 rbac::RBAC_PERM_COMMAND_RELOAD_SPELL_PROC, Console::Yes },
             { "spell_scripts",                 HandleReloadSpellScriptsCommand,               rbac::RBAC_PERM_COMMAND_RELOAD, Console::Yes },
             { "spell_target_position",         HandleReloadSpellTargetPositionCommand,        rbac::RBAC_PERM_COMMAND_RELOAD_SPELL_TARGET_POSITION, Console::Yes },
@@ -976,6 +977,14 @@ public:
         LOG_INFO("server.loading", "Reloading Spell pet auras...");
         sSpellMgr->LoadSpellPetAuras();
         handler->SendGlobalGMSysMessage("DB table `spell_pet_auras` reloaded.");
+        return true;
+    }
+
+    static bool HandleReloadPetLevelStatsCommand(ChatHandler* handler)
+    {
+        LOG_INFO("server.loading", "Reloading Pet level stats...");
+        sObjectMgr->LoadPetLevelInfo();
+        handler->SendGlobalGMSysMessage("DB table `pet_levelstats` reloaded.");
         return true;
     }
 
