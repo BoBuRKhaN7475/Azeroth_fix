@@ -163,7 +163,8 @@ static std::unordered_map<ObjectGuid, BGAfkState> s_bgAfkData;
 class BattlegroundAntiAfkScript : public AllBattlegroundScript
 {
 public:
-    BattlegroundAntiAfkScript() : AllBattlegroundScript("BattlegroundAntiAfkScript") { }
+    BattlegroundAntiAfkScript() : AllBattlegroundScript("BattlegroundAntiAfkScript",
+        {ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_UPDATE, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_REMOVE_PLAYER_AT_LEAVE}) { }
 
     void OnBattlegroundUpdate(Battleground* bg, uint32 diff) override
     {

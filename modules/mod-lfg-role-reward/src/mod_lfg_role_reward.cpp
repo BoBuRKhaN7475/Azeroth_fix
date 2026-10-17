@@ -26,7 +26,8 @@ public:
 class LfgRoleRewardPlayerScript : public PlayerScript
 {
 public:
-    LfgRoleRewardPlayerScript() : PlayerScript("LfgRoleRewardPlayerScript") { }
+    LfgRoleRewardPlayerScript() : PlayerScript("LfgRoleRewardPlayerScript",
+        {PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_PLAYER_COMPLETE_QUEST}) { }
 
     void OnPlayerLogin(Player* player) override
     {

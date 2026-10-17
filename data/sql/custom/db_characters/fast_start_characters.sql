@@ -1,3 +1,11 @@
+CREATE TABLE IF NOT EXISTS `custom_fast_start_characters` (
+    `guid` INT UNSIGNED NOT NULL,
+    `account_id` INT UNSIGNED NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`guid`),
+    KEY `idx_account` (`account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `custom_fast_start_log` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `account_id` INT UNSIGNED NOT NULL,

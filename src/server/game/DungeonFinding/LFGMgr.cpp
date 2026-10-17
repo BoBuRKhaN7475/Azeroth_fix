@@ -2894,7 +2894,7 @@ namespace lfg
                 GameEventMgr::GameEventDataMap const& events = sGameEventMgr->GetEventMap();
                 for (uint16 eventId : sGameEventMgr->GetActiveEventList())
                 {
-                    if (events[eventId].HolidayId == HOLIDAY_BREWFEST && events[eventId].HolidayStage == 2)
+                    if (eventId < events.size() && events[eventId].HolidayId == HOLIDAY_BREWFEST && events[eventId].HolidayStage == 2)
                     {
                         return true;
                     }

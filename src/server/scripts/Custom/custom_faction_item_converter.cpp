@@ -20,6 +20,7 @@
 #include "ItemEnchantmentMgr.h"
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 
 namespace
 {
@@ -27,6 +28,7 @@ namespace
     std::unordered_map<uint32, uint32> sHordeToAlliance;
     std::unordered_map<uint32, uint32> sAllianceToHorde;
     std::unordered_set<ObjectGuid> sActiveConversions;
+    std::mutex sActiveConversionsLock;
 
     constexpr uint32 GOSSIP_ACTION_SELECT_BASE  = 1000;
     constexpr uint32 GOSSIP_ACTION_CONFIRM_BASE = 10000;
@@ -284,13 +286,15 @@ public:
             ObjectGuid playerGuid = player->GetGUID();
 
             // Concurrency Lock: Prevent double-clicks / race conditions
-            if (sActiveConversions.contains(playerGuid))
             {
-                ChatHandler(player->GetSession()).SendSysMessage("В данный момент выполняется другое преобразование. Пожалуйста, подождите.");
-                return true;
+                std::lock_guard<std::mutex> lock(sActiveConversionsLock);
+                if (sActiveConversions.find(playerGuid) != sActiveConversions.end())
+                {
+                    ChatHandler(player->GetSession()).SendSysMessage("В данный момент выполняется другое преобразование. Пожалуйста, подождите.");
+                    return true;
+                }
+                sActiveConversions.insert(playerGuid);
             }
-
-            sActiveConversions.insert(playerGuid);
 
             uint32 pos = action - GOSSIP_ACTION_CONFIRM_BASE;
             uint8 bag = 0;
@@ -298,7 +302,10 @@ public:
             DecodePos(pos, bag, slot);
 
             auto unlockAndFail = [player, playerGuid](std::string const& errorMsg) {
-                sActiveConversions.erase(playerGuid);
+                {
+                    std::lock_guard<std::mutex> lock(sActiveConversionsLock);
+                    sActiveConversions.erase(playerGuid);
+                }
                 ChatHandler(player->GetSession()).SendSysMessage(errorMsg.c_str());
             };
 
@@ -459,7 +466,10 @@ public:
             }
 
             // Release Concurrency Lock
-            sActiveConversions.erase(playerGuid);
+            {
+                std::lock_guard<std::mutex> lock(sActiveConversionsLock);
+                sActiveConversions.erase(playerGuid);
+            }
 
             // Visual & Audio Feedback
             creature->CastSpell(player, 64446, true); // Visual transmutation effect

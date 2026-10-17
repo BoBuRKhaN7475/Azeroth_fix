@@ -22,3 +22,9 @@ target_link_libraries(openssl
   INTERFACE
     OpenSSL::Crypto
     OpenSSL::SSL)
+
+if(WIN32)
+  target_link_libraries(openssl
+    INTERFACE
+      crypt32)
+endif()

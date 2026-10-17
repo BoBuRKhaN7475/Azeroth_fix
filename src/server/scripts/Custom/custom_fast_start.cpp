@@ -1023,7 +1023,8 @@ public:
 class fast_start_player_security : public PlayerScript
 {
 public:
-    fast_start_player_security() : PlayerScript("fast_start_player_security") {}
+    fast_start_player_security() : PlayerScript("fast_start_player_security",
+        {PLAYERHOOK_CAN_INIT_TRADE, PLAYERHOOK_CAN_SEND_MAIL}) {}
 
     static bool IsFastStartRestricted(Player* player)
     {
@@ -1048,8 +1049,8 @@ public:
         {
             uint32 played = player->GetTotalPlayedTime();
             uint32 remainingMin = (lockDuration > played) ? ((lockDuration - played) / 60 + 1) : 1;
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Xavfsizlik]|r Fast Start qahramoni uchun savdo (obmen) yana %u daqiqa o'yin vaqtidan so'ng ochiladi!", remainingMin);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Безопасность]|r Торговля для персонажа с Быстрым стартом откроется через %u мин. игры!", remainingMin);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Xavfsizlik]|r Fast Start qahramoni uchun savdo (obmen) yana {} daqiqa o'yin vaqtidan so'ng ochiladi!", remainingMin);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Безопасность]|r Торговля для персонажа с Быстрым стартом откроется через {} мин. игры!", remainingMin);
             return false;
         }
 
@@ -1070,8 +1071,8 @@ public:
             uint32 lockDuration = sConfigMgr->GetOption<uint32>("FastStart.TradeLockTime", 7200);
             uint32 played = player->GetTotalPlayedTime();
             uint32 remainingMin = (lockDuration > played) ? ((lockDuration - played) / 60 + 1) : 1;
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Xavfsizlik]|r Fast Start qahramoni uchun pochta orqali oltin/buyum yuborish yana %u daqiqa o'yin vaqtidan so'ng ochiladi!", remainingMin);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Безопасность]|r Отправка золота/предметов по почте откроется через %u мин. игры!", remainingMin);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Xavfsizlik]|r Fast Start qahramoni uchun pochta orqali oltin/buyum yuborish yana {} daqiqa o'yin vaqtidan so'ng ochiladi!", remainingMin);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020[Безопасность]|r Отправка золота/предметов по почте откроется через {} мин. игры!", remainingMin);
             return false;
         }
 

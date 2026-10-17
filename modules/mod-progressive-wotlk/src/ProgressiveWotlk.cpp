@@ -479,7 +479,8 @@ public:
 class ProgressiveWotlkPlayerScript : public PlayerScript
 {
 public:
-    ProgressiveWotlkPlayerScript() : PlayerScript("ProgressiveWotlkPlayerScript") { }
+    ProgressiveWotlkPlayerScript() : PlayerScript("ProgressiveWotlkPlayerScript",
+        {PLAYERHOOK_CAN_ENTER_MAP}) { }
 
     bool OnPlayerCanEnterMap(Player* player, MapEntry const* entry,
                              InstanceTemplate const* /*instance*/,
@@ -576,7 +577,8 @@ public:
 class ProgressiveWotlkBattlegroundScript : public AllBattlegroundScript
 {
 public:
-    ProgressiveWotlkBattlegroundScript() : AllBattlegroundScript("ProgressiveWotlkBattlegroundScript") { }
+    ProgressiveWotlkBattlegroundScript() : AllBattlegroundScript("ProgressiveWotlkBattlegroundScript",
+        {ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_END_REWARD}) { }
 
     void OnBattlegroundEndReward(Battleground* bg, Player* player, TeamId winnerTeamId) override
     {
